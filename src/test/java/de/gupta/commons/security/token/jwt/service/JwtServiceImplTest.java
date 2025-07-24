@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -35,7 +36,7 @@ class JwtServiceImplTest
 	void setUp()
 	{
 		jwtService = new JwtServiceImpl(jwtParser);
-//		when(jws.getPayload()).thenReturn(claims);
+		Mockito.lenient().when(jws.getPayload()).thenReturn(claims);
 	}
 
 	@Nested
@@ -60,7 +61,6 @@ class JwtServiceImplTest
 		{
 			when(jwtParser.parseSignedClaims("mismatch.token")).thenReturn(jws);
 			when(claims.getSubject()).thenReturn("anotherUser");
-			when(claims.getExpiration()).thenReturn(Date.from(Instant.now().plusSeconds(3600)));
 
 			boolean result = jwtService.isTokenValid("mismatch.token", "user3");
 
@@ -88,7 +88,7 @@ class JwtServiceImplTest
 		{
 			when(jwtParser.parseSignedClaims("expired.token")).thenReturn(jws);
 			when(claims.getSubject()).thenReturn("user5");
-			when(claims.getExpiration()).thenReturn(Date.from(Instant.now().minusSeconds(60)));
+			Mockito.lenient().when(claims.getExpiration()).thenReturn(Date.from(Instant.now().minusSeconds(60)));
 
 			boolean result = jwtService.isTokenValid("expired.token", "user6");
 
