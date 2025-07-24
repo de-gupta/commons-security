@@ -4,6 +4,8 @@ import de.gupta.commons.security.token.jwt.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,7 +20,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,19 +28,21 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = JwtFilterIntegrationTest.DummySecuredController.class)
+@WebMvcTest(controllers = DummySecuredController.class)
 @AutoConfigureMockMvc
-@Import({JwtFilter.class})
+//@Import({JwtService.class, JwtFilter.class, TestSecurityConfiguration.class})
+@Import({FilterConfiguration.class, TestSecurityConfiguration.class})
 class JwtFilterIntegrationTest
 {
 	@Autowired
 	private MockMvc mockMvc;
 
 	@MockitoBean
-	private JwtService jwtService; // mock the service, not the filter
+	private JwtService jwtService;
 
 	@BeforeEach
 	void clearSecurityContext()
@@ -51,7 +54,6 @@ class JwtFilterIntegrationTest
 	@DisplayName("Should authenticate and set SecurityContext when token is valid")
 	void shouldAuthenticateWhenTokenIsValid() throws Exception
 	{
-		// Arrange
 		String token = "valid.token";
 		String username = "user1";
 		Set<String> roles = Set.of("ROLE_USER", "ROLE_ADMIN");
@@ -64,21 +66,13 @@ class JwtFilterIntegrationTest
 		when(jwtService.isTokenValid(token, username)).thenReturn(true);
 		when(jwtService.extractRole(token)).thenReturn(roles);
 
-		// Act & Assert
 		mockMvc.perform(get("/secured-endpoint")
 					   .header("Authorization", "Bearer " + token))
-			   .andExpect(status().isOk());
-
-		assertThat(SecurityContextHolder.getContext().getAuthentication())
-				.as("Security context should be populated")
-				.isNotNull()
-				.satisfies(auth ->
-				{
-					assertThat(auth.getName()).as("Authenticated username").isEqualTo("user1");
-					assertThat(auth.getAuthorities().stream().map(GrantedAuthority.class::cast))
-							.as("Granted authorities from token")
-							.containsExactlyInAnyOrderElementsOf(authorities);
-				});
+			   .andExpect(status().isOk())
+			   .andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains(
+					   "Access granted for " + username))
+			   .andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains(
+					   authorities.toString()));
 	}
 
 	@Test
@@ -86,7 +80,7 @@ class JwtFilterIntegrationTest
 	void shouldSkipWhenNoTokenPresent() throws Exception
 	{
 		mockMvc.perform(get("/secured-endpoint"))
-			   .andExpect(status().isForbidden()); // assuming your controller is secured
+			   .andExpect(status().isForbidden());
 
 		assertThat(SecurityContextHolder.getContext().getAuthentication())
 				.as("Security context should remain empty")
@@ -117,29 +111,33 @@ class JwtFilterIntegrationTest
 	void shouldSkipIfAlreadyAuthenticated() throws Exception
 	{
 		var preAuth = new UsernamePasswordAuthenticationToken("existingUser", "pwd", List.of());
-		SecurityContextHolder.getContext().setAuthentication(preAuth);
+
+		when(jwtService.extractUsername("any.token")).thenReturn("someUser");
 
 		mockMvc.perform(get("/secured-endpoint")
+					   .with(authentication(preAuth))
 					   .header("Authorization", "Bearer any.token"))
-			   .andExpect(status().isOk());
-
-		assertThat(SecurityContextHolder.getContext().getAuthentication())
-				.as("Should preserve existing authentication")
-				.isSameAs(preAuth);
+			   .andExpect(status().isOk())
+			   .andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains(
+					   "existingUser"));
 	}
 
-	@RestController
-	@RequestMapping
-	static class DummySecuredController
+}
+
+@RestController
+class DummySecuredController
+{
+	private static final Logger log = LoggerFactory.getLogger(DummySecuredController.class);
+
+	@GetMapping("/secured-endpoint")
+	public ResponseEntity<String> securedEndpoint(Authentication auth)
 	{
-		@GetMapping("/secured-endpoint")
-		public ResponseEntity<String> securedEndpoint(Authentication auth)
+		if (auth == null || !auth.isAuthenticated())
 		{
-			if (auth == null || !auth.isAuthenticated())
-			{
-				return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-			}
-			return ResponseEntity.ok("Access granted for " + auth.getName());
+			log.warn("Access denied for unauthenticated user");
+			log.warn("Authentication: {}", auth);
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
+		return ResponseEntity.ok("Access granted for " + auth.getName() + " with authorities " + auth.getAuthorities());
 	}
 }
