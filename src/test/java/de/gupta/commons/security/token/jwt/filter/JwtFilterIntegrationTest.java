@@ -34,7 +34,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = DummySecuredController.class)
 @AutoConfigureMockMvc
-//@Import({JwtService.class, JwtFilter.class, TestSecurityConfiguration.class})
 @Import({FilterConfiguration.class, TestSecurityConfiguration.class})
 class JwtFilterIntegrationTest
 {
