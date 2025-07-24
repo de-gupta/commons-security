@@ -26,11 +26,6 @@ final class JwtFilter extends OncePerRequestFilter
 {
 	private final JwtService jwtService;
 
-	public JwtFilter(final JwtService jwtService)
-	{
-		this.jwtService = jwtService;
-	}
-
 	@Override
 	protected void doFilterInternal(final HttpServletRequest request,
 									final HttpServletResponse response,
@@ -80,10 +75,16 @@ final class JwtFilter extends OncePerRequestFilter
 		SecurityContextHolder.getContext().setAuthentication(authToken);
 	}
 
+	JwtFilter(final JwtService jwtService)
+	{
+		this.jwtService = jwtService;
+	}
+
 	private record TokenAuthentication(String token, String username, Set<GrantedAuthority> authorities) implements
 			UserDetails
 	{
-		static TokenAuthentication of(final String token, final String username, final Set<GrantedAuthority> authorities)
+		static TokenAuthentication of(final String token, final String username,
+									  final Set<GrantedAuthority> authorities)
 		{
 			return new TokenAuthentication(token, username, authorities);
 		}
