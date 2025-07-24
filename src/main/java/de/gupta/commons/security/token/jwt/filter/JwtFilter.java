@@ -33,6 +33,7 @@ final class JwtFilter extends OncePerRequestFilter
 			throws ServletException, IOException
 	{
 		extractToken(request)
+				.filter(token -> !token.isBlank())
 				.filter(_ -> isSecurityContextEmpty())
 				.map(token -> Map.entry(token, jwtService.extractUsername(token)))
 				.filter(e -> jwtService.isTokenValid(e.getKey(), e.getValue()))

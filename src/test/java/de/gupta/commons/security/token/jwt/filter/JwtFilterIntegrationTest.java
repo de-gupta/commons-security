@@ -121,6 +121,48 @@ class JwtFilterIntegrationTest
 					   "existingUser"));
 	}
 
+	@Test
+	@DisplayName("Should skip setting SecurityContext when Authorization header is malformed")
+	void shouldSkipWhenAuthorizationHeaderIsMalformed() throws Exception
+	{
+		mockMvc.perform(get("/secured-endpoint")
+					   .header("Authorization", "NotBearer token"))
+			   .andExpect(status().isForbidden());
+	}
+
+	@Test
+	@DisplayName("Should skip setting SecurityContext when token is empty after Bearer")
+	void shouldSkipWhenTokenIsEmpty() throws Exception
+	{
+		mockMvc.perform(get("/secured-endpoint")
+					   .header("Authorization", "Bearer "))
+			   .andExpect(status().isForbidden());
+	}
+
+	@Test
+	@DisplayName("Should authenticate but with empty authorities if roles are missing")
+	void shouldAuthenticateWithEmptyAuthorities() throws Exception
+	{
+		String token = "valid.token";
+		String username = "user1";
+
+		when(jwtService.extractUsername(token)).thenReturn(username);
+		when(jwtService.isTokenValid(token, username)).thenReturn(true);
+		when(jwtService.extractRole(token)).thenReturn(Set.of()); // no roles
+
+		mockMvc.perform(get("/secured-endpoint")
+					   .header("Authorization", "Bearer " + token))
+			   .andExpect(status().isOk())
+			   .andExpect(result -> assertThat(result.getResponse().getContentAsString()).contains("Access granted"));
+	}
+
+	@Test
+	@DisplayName("Filter should not break the chain when token is missing or invalid for non-secured endpoints")
+	void shouldProceedRequestWhenTokenIsMissingOrInvalidButNotBreakChain() throws Exception
+	{
+		mockMvc.perform(get("/unsecured-endpoint"))
+			   .andExpect(status().is4xxClientError());
+	}
 }
 
 @RestController
