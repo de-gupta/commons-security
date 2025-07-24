@@ -55,11 +55,8 @@ final class JwtServiceImpl implements JwtService
 		return jwtParser.parseSignedClaims(token);
 	}
 
-	JwtServiceImpl(@Value("${security.jwtSecret}") final String secret)
+	JwtServiceImpl(final JwtParser jwtParser)
 	{
-		byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-
-		final SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
-		jwtParser = Jwts.parser().verifyWith(secretKey).build();
+		this.jwtParser = jwtParser;
 	}
 }
