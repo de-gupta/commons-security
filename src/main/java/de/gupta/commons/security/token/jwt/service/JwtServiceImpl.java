@@ -39,7 +39,7 @@ final class JwtServiceImpl implements JwtService
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Set<String> extractRole(final String token)
+	public Set<String> extractRoles(final String token)
 	{
 		List<String> roles = (List<String>) extractClaims(token).getPayload().get("user_roles", List.class);
 		return new HashSet<>(roles);

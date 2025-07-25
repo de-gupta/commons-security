@@ -39,10 +39,9 @@ final class JwtFilterImpl extends OncePerRequestFilter implements JwtFilter
 				.filter(e -> jwtService.isTokenValid(e.getKey(), e.getValue()))
 				.map(e ->
 						{
-							final var authorities = jwtService.extractRole(e.getKey())
+							final var authorities = jwtService.extractRoles(e.getKey())
 															  .stream()
 															  .map(SimpleGrantedAuthority::new)
-															  .map(GrantedAuthority.class::cast)
 															  .collect(Collectors.toSet());
 							return TokenAuthentication.of(e.getKey(), e.getValue(), authorities);
 						}

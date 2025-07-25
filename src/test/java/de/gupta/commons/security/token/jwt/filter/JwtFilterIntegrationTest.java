@@ -70,7 +70,7 @@ class JwtFilterIntegrationTest
 
 		when(jwtService.extractUsername(token)).thenReturn(username);
 		when(jwtService.isTokenValid(token, username)).thenReturn(true);
-		when(jwtService.extractRole(token)).thenReturn(roles);
+		when(jwtService.extractRoles(token)).thenReturn(roles);
 
 		mockMvc.perform(get("/secured-endpoint")
 					   .header("Authorization", "Bearer " + token))
@@ -155,7 +155,7 @@ class JwtFilterIntegrationTest
 
 		when(jwtService.extractUsername(token)).thenReturn(username);
 		when(jwtService.isTokenValid(token, username)).thenReturn(true);
-		when(jwtService.extractRole(token)).thenReturn(Set.of()); // no roles
+		when(jwtService.extractRoles(token)).thenReturn(Set.of()); // no roles
 
 		mockMvc.perform(get("/secured-endpoint")
 					   .header("Authorization", "Bearer " + token))

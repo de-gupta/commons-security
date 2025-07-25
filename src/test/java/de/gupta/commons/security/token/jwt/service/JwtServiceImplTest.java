@@ -157,7 +157,7 @@ class JwtServiceImplTest
 			when(jwtParser.parseSignedClaims("token")).thenReturn(jws);
 			when(claims.get("user_roles", List.class)).thenReturn(List.of("ROLE_USER"));
 
-			Set<String> result = jwtService.extractRole("token");
+			Set<String> result = jwtService.extractRoles("token");
 
 			assertThat(result)
 					.as("A single role should be extracted from the token")
@@ -170,7 +170,7 @@ class JwtServiceImplTest
 			when(jwtParser.parseSignedClaims("token")).thenReturn(jws);
 			when(claims.get("user_roles", List.class)).thenReturn(List.of("ROLE_USER", "ROLE_ADMIN"));
 
-			Set<String> result = jwtService.extractRole("token");
+			Set<String> result = jwtService.extractRoles("token");
 
 			assertThat(result)
 					.as("Multiple roles should be extracted from the token")
@@ -183,7 +183,7 @@ class JwtServiceImplTest
 			when(jwtParser.parseSignedClaims("token")).thenReturn(jws);
 			when(claims.get("user_roles", List.class)).thenReturn(List.of());
 
-			Set<String> result = jwtService.extractRole("token");
+			Set<String> result = jwtService.extractRoles("token");
 
 			assertThat(result)
 					.as("An empty list of roles should be converted to an empty set")
@@ -196,7 +196,7 @@ class JwtServiceImplTest
 			when(jwtParser.parseSignedClaims("token")).thenReturn(jws);
 			when(claims.get("user_roles", List.class)).thenReturn(List.of("ROLE_USER", "ROLE_USER", "ROLE_ADMIN"));
 
-			Set<String> result = jwtService.extractRole("token");
+			Set<String> result = jwtService.extractRoles("token");
 
 			assertThat(result)
 					.as("Duplicate roles should be deduplicated")
@@ -208,7 +208,7 @@ class JwtServiceImplTest
 		{
 			when(jwtParser.parseSignedClaims("broken.token")).thenThrow(new RuntimeException("JWT parse failed"));
 
-			assertThatThrownBy(() -> jwtService.extractRole("broken.token"))
+			assertThatThrownBy(() -> jwtService.extractRoles("broken.token"))
 					.isInstanceOf(RuntimeException.class)
 					.hasMessageContaining("JWT parse failed");
 		}
@@ -219,7 +219,7 @@ class JwtServiceImplTest
 			when(jwtParser.parseSignedClaims("wrong.claim")).thenReturn(jws);
 			when(claims.get("user_roles", List.class)).thenThrow(new ClassCastException("Wrong type"));
 
-			assertThatThrownBy(() -> jwtService.extractRole("wrong.claim"))
+			assertThatThrownBy(() -> jwtService.extractRoles("wrong.claim"))
 					.isInstanceOf(ClassCastException.class)
 					.hasMessageContaining("Wrong type");
 		}

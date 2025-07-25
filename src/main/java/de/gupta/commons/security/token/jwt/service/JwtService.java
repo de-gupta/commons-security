@@ -8,5 +8,5 @@ public interface JwtService
 
 	String extractUsername(String token);
 
-	Set<String> extractRole(String token);
+	Set<String> extractRoles(String token);
 }
