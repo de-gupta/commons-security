@@ -166,7 +166,7 @@ class JwtFilterIntegrationTest
 }
 
 @RestController
-class DummySecuredController
+final class DummySecuredController
 {
 	private static final Logger log = LoggerFactory.getLogger(DummySecuredController.class);
 

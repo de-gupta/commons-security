@@ -1,6 +1,7 @@
 package de.gupta.commons.security.token.jwt.filter;
 
 import de.gupta.commons.security.token.jwt.service.JwtService;
+import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
-final class JwtFilter extends OncePerRequestFilter
+final class JwtFilter extends OncePerRequestFilter implements Filter
 {
 	private final JwtService jwtService;
 
@@ -81,11 +82,11 @@ final class JwtFilter extends OncePerRequestFilter
 		this.jwtService = jwtService;
 	}
 
-	private record TokenAuthentication(String token, String username, Set<GrantedAuthority> authorities) implements
-			UserDetails
+	private record TokenAuthentication(String token, String username, Set<? extends GrantedAuthority> authorities)
+			implements UserDetails
 	{
 		static TokenAuthentication of(final String token, final String username,
-									  final Set<GrantedAuthority> authorities)
+									  final Set<? extends GrantedAuthority> authorities)
 		{
 			return new TokenAuthentication(token, username, authorities);
 		}

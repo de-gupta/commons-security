@@ -1,6 +1,6 @@
 package de.gupta.commons.security;
 
-import de.gupta.commons.security.configuration.SecurityConfigurationProperties;
+import de.gupta.commons.security.api.configuration.SecurityConfigurationProperties;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;

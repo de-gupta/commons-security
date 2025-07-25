@@ -1,4 +1,4 @@
-package de.gupta.commons.security.context;
+package de.gupta.commons.security.api.context;
 
 public interface SecurityContextQueryManager
 {

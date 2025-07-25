@@ -1,4 +1,4 @@
-package de.gupta.commons.security.configuration;
+package de.gupta.commons.security.api.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
