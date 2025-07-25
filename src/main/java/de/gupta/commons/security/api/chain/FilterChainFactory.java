@@ -9,10 +9,36 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 public final class FilterChainFactory
 {
-	public static SecurityFilterChain securePathsWithAuthoritySecurityFilterChain(HttpSecurity http,
-																				  final String[] paths,
-																				  final String[] authorities,
-																				  final JwtFilter filter)
+	private static final String[] swaggerPaths =
+			{"/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs.yaml",
+					"/swagger-resources/**", "/webjars/**"};
+	private static final String[] actuatorPaths = {"/actuator/**"};
+
+	public static SecurityFilterChain exposeSwaggerPaths(HttpSecurity http) throws Exception
+	{
+		return exposePaths(http, swaggerPaths);
+	}
+
+	public static SecurityFilterChain exposePaths(HttpSecurity http, final String[] paths)
+			throws Exception
+	{
+		return http.securityMatchers(matchers -> matchers.requestMatchers(paths))
+				   .csrf(AbstractHttpConfigurer::disable)
+				   .httpBasic(Customizer.withDefaults())
+				   .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+				   .build();
+	}
+
+	public static SecurityFilterChain secureActuatorPathsWithAuthorities(HttpSecurity http, String[] authorities,
+																		 JwtFilter filter) throws Exception
+	{
+		return securePathsWithAuthorities(http, actuatorPaths, authorities, filter);
+	}
+
+	public static SecurityFilterChain securePathsWithAuthorities(HttpSecurity http,
+																 final String[] paths,
+																 final String[] authorities,
+																 final JwtFilter filter)
 			throws Exception
 	{
 		return http.securityMatchers(matchers -> matchers.requestMatchers(paths))
@@ -23,17 +49,12 @@ public final class FilterChainFactory
 				   .build();
 	}
 
-	public static SecurityFilterChain exposePathsSecurityFilterChain(HttpSecurity http, final String[] paths)
-			throws Exception
+	public static SecurityFilterChain exposeActuatorPaths(HttpSecurity http) throws Exception
 	{
-		return http.securityMatchers(matchers -> matchers.requestMatchers(paths))
-				   .csrf(AbstractHttpConfigurer::disable)
-				   .httpBasic(Customizer.withDefaults())
-				   .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-				   .build();
+		return exposePaths(http, actuatorPaths);
 	}
 
-	public static SecurityFilterChain tokenAuthenticatedSecurityFilterChain(HttpSecurity http, final JwtFilter filter)
+	public static SecurityFilterChain secureWithFilter(HttpSecurity http, final JwtFilter filter)
 			throws Exception
 	{
 		return http.csrf(AbstractHttpConfigurer::disable)

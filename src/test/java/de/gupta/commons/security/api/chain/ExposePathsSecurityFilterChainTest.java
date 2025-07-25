@@ -170,14 +170,14 @@ class SecurityConfiguration
 	@Order(1)
 	public SecurityFilterChain exposeOnlyPublicPaths(HttpSecurity http) throws Exception
 	{
-		return FilterChainFactory.exposePathsSecurityFilterChain(http, new String[]{"/public/**"});
+		return FilterChainFactory.exposePaths(http, new String[]{"/public/**"});
 	}
 
 	@Bean
 	@Order(2)
 	public SecurityFilterChain secureAdminPaths(HttpSecurity http, final JwtFilter jwtFilter) throws Exception
 	{
-		return FilterChainFactory.securePathsWithAuthoritySecurityFilterChain(http, new String[]{"/admin/**"},
+		return FilterChainFactory.securePathsWithAuthorities(http, new String[]{"/admin/**"},
 				new String[]{"ROLE_ADMIN"}, jwtFilter);
 	}
 
@@ -185,6 +185,6 @@ class SecurityConfiguration
 	@Order(3)
 	public SecurityFilterChain securePaths(HttpSecurity http, final JwtFilter filter) throws Exception
 	{
-		return FilterChainFactory.tokenAuthenticatedSecurityFilterChain(http, filter);
+		return FilterChainFactory.secureWithFilter(http, filter);
 	}
 }
