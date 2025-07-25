@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 @ComponentScan
 @EnableConfigurationProperties(SecurityConfigurationProperties.class)
-public class SecurityModuleConfiguration
+public class SecurityLibraryConfiguration
 {
 	@Bean
 	JwtParser jwtParser(@Value("${security.jwtSecret}") final String secret)
