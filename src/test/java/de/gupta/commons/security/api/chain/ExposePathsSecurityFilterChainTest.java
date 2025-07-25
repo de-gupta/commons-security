@@ -60,7 +60,6 @@ final class ExposePathsSecurityFilterChainTest
 					   .doesNotContain("Public access granted"));
 	}
 
-	// Provide some public paths
 	private static Stream<Arguments> allowedPathScenarios()
 	{
 		return Stream.of(
@@ -69,7 +68,6 @@ final class ExposePathsSecurityFilterChainTest
 		);
 	}
 
-	// Provide some non-public paths
 	private static Stream<Arguments> restrictedPathScenarios()
 	{
 		return Stream.of(
