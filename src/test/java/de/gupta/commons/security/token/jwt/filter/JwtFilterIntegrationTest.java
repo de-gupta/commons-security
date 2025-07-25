@@ -9,14 +9,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +41,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = DummySecuredController.class)
 @AutoConfigureMockMvc
-//@Import({FilterConfiguration.class, TestSecurityConfiguration.class})
 @Import({TestSecurityConfiguration.class})
 class JwtFilterIntegrationTest
 {
@@ -181,5 +187,20 @@ final class DummySecuredController
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 		return ResponseEntity.ok("Access granted for " + auth.getName() + " with authorities " + auth.getAuthorities());
+	}
+}
+
+@Configuration
+@EnableWebSecurity
+class TestSecurityConfiguration
+{
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception
+	{
+		return
+				http.csrf(AbstractHttpConfigurer::disable)
+					.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+					.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+					.build();
 	}
 }
