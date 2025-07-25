@@ -10,6 +10,6 @@ public class FilterConfiguration
 	@Bean
 	JwtFilter jwtFilter(final JwtService service)
 	{
-		return new JwtFilter(service);
+		return new JwtFilterImpl(service);
 	}
 }

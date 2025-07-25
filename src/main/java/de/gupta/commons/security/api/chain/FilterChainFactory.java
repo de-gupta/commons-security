@@ -1,6 +1,6 @@
 package de.gupta.commons.security.api.chain;
 
-import jakarta.servlet.Filter;
+import de.gupta.commons.security.token.jwt.filter.JwtFilter;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -30,7 +30,7 @@ public final class FilterChainFactory
 				   .build();
 	}
 
-	public static SecurityFilterChain tokenAuthenticatedSecurityFilterChain(HttpSecurity http, final Filter filter)
+	public static SecurityFilterChain tokenAuthenticatedSecurityFilterChain(HttpSecurity http, final JwtFilter filter)
 			throws Exception
 	{
 		return http.csrf(AbstractHttpConfigurer::disable)
