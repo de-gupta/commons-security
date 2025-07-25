@@ -4,7 +4,7 @@
 
     <groupId>io.github.de-gupta</groupId>
     <artifactId>commons-security</artifactId>
-    <version>0.0.5-SNAPSHOT</version>
+    <version>0.0.5</version>
 
     <name>${artifactId}</name>
     <description>A library for security</description>
@@ -81,7 +81,7 @@
         <connection>scm:git:ssh://git@github.com/de-gupta/commons-security.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/de-gupta/commons-security.git</developerConnection>
         <url>https://github.com/de-gupta/commons-security.git</url>
-        <tag>HEAD</tag>
+        <tag>v0.0.5</tag>
     </scm>
 
     <build>
