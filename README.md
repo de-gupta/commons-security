@@ -1,6 +1,6 @@
 # commons-security
 
-`themis` is a lean Spring Security helper library for JWT-based services in the `de-gupta` ecosystem.
+`themis` is a lean Spring Security helper library for JWT-based applications.
 
 It keeps integration explicit: consumer applications import the library configuration themselves and decide where the
 provided JWT filter is used in their own `SecurityFilterChain` definitions.
@@ -12,7 +12,7 @@ provided JWT filter is used in their own `SecurityFilterChain` definitions.
 <dependency>
     <groupId>io.github.de-gupta</groupId>
     <artifactId>themis</artifactId>
-    <version>0.0.7-SNAPSHOT</version>
+    <version>${latest-release-version}</version>
 </dependency>
 ```
 
