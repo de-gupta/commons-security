@@ -1,12 +1,10 @@
 package de.gupta.commons.security.token.jwt.service;
 
-import java.util.Set;
+import de.gupta.commons.security.token.jwt.model.JwtPrincipal;
+
+import java.util.Optional;
 
 public interface JwtService
 {
-	boolean isTokenValid(String token, String username);
-
-	String extractUsername(String token);
-
-	Set<String> extractRoles(String token);
+	Optional<JwtPrincipal> verify(String token);
 }

@@ -1,48 +1,57 @@
 package de.gupta.commons.security.token.jwt.service;
 
+import de.gupta.commons.security.token.jwt.model.JwtPrincipal;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
-import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 
-@Service
 final class JwtServiceImpl implements JwtService
 {
 	private final JwtParser jwtParser;
+	private final String rolesClaim;
 
 	@Override
-	public boolean isTokenValid(final String token, final String username)
+	public Optional<JwtPrincipal> verify(final String token)
 	{
-		return username.equals(extractUsername(token)) && !isTokenExpired(token);
+		try
+		{
+			final Claims claims = extractClaims(token).getPayload();
+			return extractSubject(claims)
+					.map(subject -> JwtPrincipal.of(token, subject, extractRoles(claims)));
+		}
+		catch (final JwtException | IllegalArgumentException ex)
+		{
+			return Optional.empty();
+		}
 	}
 
-	@Override
-	public String extractUsername(final String token)
+	private Optional<String> extractSubject(final Claims claims)
 	{
-		return jwtParser.parseSignedClaims(token).getPayload().getSubject();
+		return Optional.ofNullable(claims.getSubject())
+		               .map(String::trim)
+		               .filter(subject -> !subject.isEmpty());
 	}
 
-	private boolean isTokenExpired(final String token)
+	private Set<String> extractRoles(final Claims claims)
 	{
-		return extractExpiration(token).isBefore(Instant.now());
-	}
+		final Object rawClaim = claims.get(rolesClaim);
+		if (!(rawClaim instanceof Collection<?> values))
+		{
+			return Set.of();
+		}
 
-	private Instant extractExpiration(final String token)
-	{
-		return jwtParser.parseSignedClaims(token).getPayload().getExpiration().toInstant();
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public Set<String> extractRoles(final String token)
-	{
-		List<String> roles = (List<String>) extractClaims(token).getPayload().get("user_roles", List.class);
-		return new HashSet<>(roles);
+		return values.stream()
+		             .filter(String.class::isInstance)
+		             .map(String.class::cast)
+		             .map(String::trim)
+		             .filter(role -> !role.isEmpty())
+		             .collect(LinkedHashSet::new, Set::add, Set::addAll);
 	}
 
 	private Jws<Claims> extractClaims(final String token)
@@ -50,8 +59,9 @@ final class JwtServiceImpl implements JwtService
 		return jwtParser.parseSignedClaims(token);
 	}
 
-	JwtServiceImpl(final JwtParser jwtParser)
+	JwtServiceImpl(final JwtParser jwtParser, final String rolesClaim)
 	{
 		this.jwtParser = jwtParser;
+		this.rolesClaim = rolesClaim;
 	}
 }

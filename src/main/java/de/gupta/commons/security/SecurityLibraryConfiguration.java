@@ -1,29 +1,47 @@
 package de.gupta.commons.security;
 
-import de.gupta.commons.security.api.configuration.SecurityConfigurationProperties;
+import de.gupta.commons.security.api.configuration.JwtConfigurationProperties;
+import de.gupta.commons.security.api.context.SecurityContextQueryManager;
+import de.gupta.commons.security.api.context.SecurityContextQueryManagerFactory;
+import de.gupta.commons.security.token.jwt.filter.JwtFilter;
+import de.gupta.commons.security.token.jwt.filter.JwtFilterFactory;
+import de.gupta.commons.security.token.jwt.service.JwtService;
+import de.gupta.commons.security.token.jwt.service.JwtServices;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
-import org.springframework.beans.factory.annotation.Value;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
 @Configuration
-@ComponentScan
-@EnableConfigurationProperties(SecurityConfigurationProperties.class)
+@EnableConfigurationProperties(JwtConfigurationProperties.class)
 public class SecurityLibraryConfiguration
 {
 	@Bean
-	JwtParser jwtParser(@Value("${security.jwtSecret}") final String secret)
+	JwtParser jwtParser(final JwtConfigurationProperties properties)
 	{
-		byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-
-		final SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
+		final var secretKey = Keys.hmacShaKeyFor(properties.secret().getBytes(StandardCharsets.UTF_8));
 		return Jwts.parser().verifyWith(secretKey).build();
+	}
+
+	@Bean
+	JwtService jwtService(final JwtParser jwtParser, final JwtConfigurationProperties properties)
+	{
+		return JwtServices.create(jwtParser, properties.rolesClaim());
+	}
+
+	@Bean
+	JwtFilter jwtFilter(final JwtService jwtService)
+	{
+		return JwtFilterFactory.create(jwtService);
+	}
+
+	@Bean
+	SecurityContextQueryManager securityContextQueryManager()
+	{
+		return SecurityContextQueryManagerFactory.create();
 	}
 }
