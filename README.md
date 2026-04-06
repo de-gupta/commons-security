@@ -49,7 +49,7 @@ What those beans do:
 ## Import The Library
 
 ```java
-import de.gupta.commons.security.ThemisConfiguration;
+import de.gupta.commons.security.old.ThemisConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
@@ -99,9 +99,9 @@ the library normally.
 ### Option 1: Use `FilterChainFactory`
 
 ```java
-import de.gupta.commons.security.ThemisConfiguration;
-import de.gupta.commons.security.api.chain.FilterChainFactory;
-import de.gupta.commons.security.token.jwt.filter.JwtFilter;
+import de.gupta.commons.security.old.ThemisConfiguration;
+import de.gupta.commons.security.old.api.chain.FilterChainFactory;
+import de.gupta.commons.security.old.token.jwt.filter.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -144,8 +144,8 @@ class ApplicationSecurityConfiguration
 ### Option 2: Wire `JwtFilter` Directly
 
 ```java
-import de.gupta.commons.security.ThemisConfiguration;
-import de.gupta.commons.security.token.jwt.filter.JwtFilter;
+
+de.gupta.commons.security.old.token.jwt.filter.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -156,7 +156,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@Import(ThemisConfiguration.class)
+@Import(de.gupta.commons.security.old.ThemisConfiguration.class)
 class ApplicationSecurityConfiguration
 {
 	@Bean
