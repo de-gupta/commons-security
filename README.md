@@ -82,6 +82,22 @@ Defaults:
 
 ## Typical Consumer Configuration
 
+The library can be used in two ways:
+
+- use `FilterChainFactory` for small convenience shortcuts
+- ignore `FilterChainFactory` completely and wire `JwtFilter` into your own `HttpSecurity` configuration directly
+
+`FilterChainFactory` is optional. It is useful when the consumer wants quick helpers for common cases such as:
+
+- exposing selected public paths
+- securing selected paths with required authorities
+- securing the remaining application paths with JWT
+
+If the consumer wants full control over Spring Security, they can skip `FilterChainFactory` and still use the rest of
+the library normally.
+
+### Option 1: Use `FilterChainFactory`
+
 ```java
 import de.gupta.commons.security.SecurityLibraryConfiguration;
 import de.gupta.commons.security.api.chain.FilterChainFactory;
@@ -124,6 +140,58 @@ class ApplicationSecurityConfiguration
 	}
 }
 ```
+
+### Option 2: Wire `JwtFilter` Directly
+
+```java
+import de.gupta.commons.security.SecurityLibraryConfiguration;
+import de.gupta.commons.security.token.jwt.filter.JwtFilter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@Import(SecurityLibraryConfiguration.class)
+class ApplicationSecurityConfiguration
+{
+	@Bean
+	@Order(1)
+	SecurityFilterChain publicPaths(HttpSecurity http) throws Exception
+	{
+		return http
+				.securityMatchers(matchers -> matchers.requestMatchers("/public/**"))
+				.csrf(AbstractHttpConfigurer::disable)
+				.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+				.build();
+	}
+
+	@Bean
+	@Order(2)
+	SecurityFilterChain applicationPaths(HttpSecurity http, JwtFilter jwtFilter) throws Exception
+	{
+		return http
+				.csrf(AbstractHttpConfigurer::disable)
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN")
+						.anyRequest().authenticated())
+				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+				.build();
+	}
+}
+```
+
+In both options, the consumer still owns:
+
+- which paths are public
+- which paths require authentication
+- which authorities are required
+- filter-chain ordering
+- any additional Spring Security features beyond JWT verification
 
 ## What Request Flow Looks Like
 
