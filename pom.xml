@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.de-gupta</groupId>
-    <artifactId>commons-security</artifactId>
+    <artifactId>themis</artifactId>
     <version>0.0.7-SNAPSHOT</version>
 
     <name>${artifactId}</name>
     <description>A library for security</description>
-    <url>https://github.com/de-gupta/commons-security.git</url>
+    <url>https://github.com/de-gupta/themis.git</url>
 
     <properties>
         <java.version>25</java.version>
@@ -109,9 +109,9 @@
     </dependencies>
 
     <scm>
-        <connection>scm:git:ssh://git@github.com/de-gupta/commons-security.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/de-gupta/commons-security.git</developerConnection>
-        <url>https://github.com/de-gupta/commons-security.git</url>
+        <connection>scm:git:ssh://git@github.com/de-gupta/themis.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/de-gupta/themis.git</developerConnection>
+        <url>https://github.com/de-gupta/themis.git</url>
         <tag>HEAD</tag>
     </scm>
 
