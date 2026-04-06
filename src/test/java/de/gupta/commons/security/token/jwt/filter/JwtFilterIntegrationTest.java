@@ -1,7 +1,7 @@
 package de.gupta.commons.security.token.jwt.filter;
 
-import de.gupta.commons.security.SecurityLibraryConfiguration;
 import de.gupta.commons.security.TestJwtTokens;
+import de.gupta.commons.security.ThemisConfiguration;
 import de.gupta.commons.security.token.jwt.model.JwtPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = DummySecuredController.class)
 @AutoConfigureMockMvc
-@Import({SecurityLibraryConfiguration.class, JwtFilterTestSecurityConfiguration.class})
+@Import({ThemisConfiguration.class, JwtFilterTestSecurityConfiguration.class})
 @TestPropertySource(properties = "security.jwt.secret=" + TestJwtTokens.SECRET)
 class JwtFilterIntegrationTest
 {

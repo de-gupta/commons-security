@@ -21,7 +21,7 @@ provided JWT filter is used in their own `SecurityFilterChain` definitions.
 To use this library in a service, the consumer must:
 
 1. add the Maven dependency
-2. import `SecurityLibraryConfiguration`
+2. import `ThemisConfiguration`
 3. configure `security.jwt.secret`
 4. define one or more `SecurityFilterChain` beans that use the provided `JwtFilter`
 5. send bearer tokens whose subject is in `sub` and whose roles are in the configured roles claim
@@ -49,12 +49,12 @@ What those beans do:
 ## Import The Library
 
 ```java
-import de.gupta.commons.security.SecurityLibraryConfiguration;
+import de.gupta.commons.security.ThemisConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import(SecurityLibraryConfiguration.class)
+@Import(ThemisConfiguration.class)
 class SecurityImportConfiguration
 {
 }
@@ -99,7 +99,7 @@ the library normally.
 ### Option 1: Use `FilterChainFactory`
 
 ```java
-import de.gupta.commons.security.SecurityLibraryConfiguration;
+import de.gupta.commons.security.ThemisConfiguration;
 import de.gupta.commons.security.api.chain.FilterChainFactory;
 import de.gupta.commons.security.token.jwt.filter.JwtFilter;
 import org.springframework.context.annotation.Bean;
@@ -110,7 +110,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@Import(SecurityLibraryConfiguration.class)
+@Import(ThemisConfiguration.class)
 class ApplicationSecurityConfiguration
 {
 	@Bean
@@ -144,7 +144,7 @@ class ApplicationSecurityConfiguration
 ### Option 2: Wire `JwtFilter` Directly
 
 ```java
-import de.gupta.commons.security.SecurityLibraryConfiguration;
+import de.gupta.commons.security.ThemisConfiguration;
 import de.gupta.commons.security.token.jwt.filter.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -156,7 +156,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@Import(SecurityLibraryConfiguration.class)
+@Import(ThemisConfiguration.class)
 class ApplicationSecurityConfiguration
 {
 	@Bean
@@ -232,7 +232,7 @@ After successful JWT authentication:
 ## Minimal Adoption Checklist
 
 - Add the dependency.
-- Add `@Import(SecurityLibraryConfiguration.class)`.
+- Add `@Import(ThemisConfiguration.class)`.
 - Set `security.jwt.secret`.
 - Add a `SecurityFilterChain` that uses the injected `JwtFilter`.
 - Choose which paths are public and which require authorities.

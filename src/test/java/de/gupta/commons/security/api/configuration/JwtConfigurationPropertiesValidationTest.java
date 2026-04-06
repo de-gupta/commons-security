@@ -1,7 +1,7 @@
 package de.gupta.commons.security.api.configuration;
 
-import de.gupta.commons.security.SecurityLibraryConfiguration;
 import de.gupta.commons.security.TestJwtTokens;
+import de.gupta.commons.security.ThemisConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +52,7 @@ class JwtConfigurationPropertiesValidationTest
 }
 
 @Configuration
-@Import(SecurityLibraryConfiguration.class)
+@Import(ThemisConfiguration.class)
 class ImportedSecurityLibraryConfiguration
 {
 }

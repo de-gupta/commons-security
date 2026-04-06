@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 @EnableConfigurationProperties(JwtConfigurationProperties.class)
-public class SecurityLibraryConfiguration
+public class ThemisConfiguration
 {
 	@Bean
 	JwtParser jwtParser(final JwtConfigurationProperties properties)

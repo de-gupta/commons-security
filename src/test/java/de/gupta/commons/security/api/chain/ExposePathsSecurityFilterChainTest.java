@@ -1,7 +1,7 @@
 package de.gupta.commons.security.api.chain;
 
-import de.gupta.commons.security.SecurityLibraryConfiguration;
 import de.gupta.commons.security.TestJwtTokens;
+import de.gupta.commons.security.ThemisConfiguration;
 import de.gupta.commons.security.token.jwt.filter.JwtFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = DummyController.class)
-@Import({FilterChainFactoryConsumerConfiguration.class, SecurityLibraryConfiguration.class})
+@Import({FilterChainFactoryConsumerConfiguration.class, ThemisConfiguration.class})
 @TestPropertySource(properties = "security.jwt.secret=" + TestJwtTokens.SECRET)
 class ExposePathsSecurityFilterChainTest
 {
