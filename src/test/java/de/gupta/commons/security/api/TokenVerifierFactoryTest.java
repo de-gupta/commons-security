@@ -15,7 +15,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TokenVerifierFactoryTest
+final class TokenVerifierFactoryTest
 {
 	@Test
 	void shouldVerifyValidToken()
