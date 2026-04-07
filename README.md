@@ -156,9 +156,9 @@ This is the intended shape when you have multiple auth components:
 Create an HMAC verifier:
 
 ```java
-import de.gupta.commons.security.api.TokenVerificationPolicy;
-import de.gupta.commons.security.api.TokenVerifier;
-import de.gupta.commons.security.api.TokenVerifierFactory;
+import api.de.gupta.security.themis.TokenVerificationPolicy;
+import api.de.gupta.security.themis.TokenVerifier;
+import api.de.gupta.security.themis.TokenVerifierFactory;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -188,10 +188,10 @@ final TokenVerifier ecVerifier = TokenVerifierFactory.ec(policy, ecPublicKey);
 Verify a token:
 
 ```java
-import de.gupta.commons.security.domain.model.NormalizedToken;
-import de.gupta.commons.security.domain.model.VerificationFailure;
-import de.gupta.commons.security.domain.model.VerificationResult;
-import de.gupta.commons.security.domain.model.VerificationSuccess;
+import model.domain.de.gupta.security.themis.NormalizedToken;
+import model.domain.de.gupta.security.themis.VerificationFailure;
+import model.domain.de.gupta.security.themis.VerificationResult;
+import model.domain.de.gupta.security.themis.VerificationSuccess;
 
 final VerificationResult result = verifier.verify(jwtToken);
 
