@@ -61,4 +61,38 @@ final class TokenVerifierFactoryTest
 		assertThat(result).isInstanceOf(VerificationFailure.class);
 		assertThat(((VerificationFailure) result).reason()).isEqualTo(VerificationFailureReason.MISSING_SUBJECT);
 	}
+
+	@Test
+	void shouldVerifyValidRsaToken()
+	{
+		final TokenVerifier verifier = TokenVerifierFactory.rsa(
+				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty()),
+				TestJwtTokens.rsaPublicKey());
+		final String token = TestJwtTokens.rsaTokenWithRoles("rsa-user@example.com", Instant.now().plusSeconds(3600),
+				List.of("ROLE_RSA"));
+
+		final VerificationResult result = verifier.verify(token);
+
+		assertThat(result).isInstanceOf(VerificationSuccess.class);
+		final VerificationSuccess success = (VerificationSuccess) result;
+		assertThat(success.token().subject()).isEqualTo("rsa-user@example.com");
+		assertThat(success.token().stringListClaim("user_roles")).containsExactly("ROLE_RSA");
+	}
+
+	@Test
+	void shouldVerifyValidEcToken()
+	{
+		final TokenVerifier verifier = TokenVerifierFactory.ec(
+				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty()),
+				TestJwtTokens.ecPublicKey());
+		final String token = TestJwtTokens.ecTokenWithRoles("ec-user@example.com", Instant.now().plusSeconds(3600),
+				List.of("ROLE_EC"));
+
+		final VerificationResult result = verifier.verify(token);
+
+		assertThat(result).isInstanceOf(VerificationSuccess.class);
+		final VerificationSuccess success = (VerificationSuccess) result;
+		assertThat(success.token().subject()).isEqualTo("ec-user@example.com");
+		assertThat(success.token().stringListClaim("user_roles")).containsExactly("ROLE_EC");
+	}
 }

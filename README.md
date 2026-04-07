@@ -1,9 +1,15 @@
-# commons-security
+# themis
 
-`themis` is a lean Spring Security helper library for JWT-based applications.
+`themis` is a lean Java 25 JWT verification library.
 
-It keeps integration explicit: consumer applications import the library configuration themselves and decide where the
-provided JWT filter is used in their own `SecurityFilterChain` definitions.
+Its current job is deliberately narrow:
+
+- verify a signed JWT
+- normalize trusted claims into a stable token model
+- return either a verification success or a verification failure with a reason
+
+It is not a Spring Security auto-configuration library, and it does not handle login, token issuance, refresh, or
+revocation/version checks.
 
 ## Dependency
 
@@ -16,234 +22,218 @@ provided JWT filter is used in their own `SecurityFilterChain` definitions.
 </dependency>
 ```
 
-## What The Consumer Must Do
+## What Themis Does
 
-To use this library in a service, the consumer must:
+Today, `themis` supports:
 
-1. add the Maven dependency
-2. import `ThemisConfiguration`
-3. configure `security.jwt.secret`
-4. define one or more `SecurityFilterChain` beans that use the provided `JwtFilter`
-5. send bearer tokens whose subject is in `sub` and whose roles are in the configured roles claim
+- HMAC-signed JWT verification
+- RSA-signed JWT verification
+- EC-signed JWT verification
+- expiry validation
+- not-before validation
+- optional subject requirement
+- optional issuer validation
+- optional audience validation
+- normalized access to trusted claims after verification
 
-This library does not auto-register security for the application on its own. The consumer still owns the service's
-Spring Security configuration and path rules.
+The main public API lives in:
 
-## What The Consumer Gets
+- `de.gupta.commons.security.api`
+- `de.gupta.commons.security.domain.model`
 
-After importing the library configuration, the consumer gets these beans:
+## Quick Start
 
-- `JwtParser`
-- `JwtService`
-- `JwtFilter`
-- `SecurityContextQueryManager`
-
-What those beans do:
-
-- `JwtParser` verifies signed JWTs using the configured shared secret.
-- `JwtService` verifies tokens and maps them into the library's typed `JwtPrincipal`.
-- `JwtFilter` reads `Authorization: Bearer ...`, verifies the token, and populates the `SecurityContext` when valid.
-- `SecurityContextQueryManager` is a small convenience API for reading the authenticated username and authorities from
-  the current security context.
-
-## Import The Library
+Create a verifier:
 
 ```java
-import de.gupta.commons.security.old.ThemisConfiguration;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import de.gupta.commons.security.api.TokenVerificationPolicy;
+import de.gupta.commons.security.api.TokenVerifier;
+import de.gupta.commons.security.api.TokenVerifierFactory;
 
-@Configuration
-@Import(ThemisConfiguration.class)
-class SecurityImportConfiguration
-{
+import java.time.Duration;
+import java.util.Optional;
+import java.util.Set;
+
+final TokenVerifier verifier = TokenVerifierFactory.hmac(
+		TokenVerificationPolicy.of(
+				Duration.ofSeconds(30),
+				true,
+				Set.of("my-service"),
+				Optional.of("https://issuer.example")
+		),
+		"0123456789abcdef0123456789abcdef"
+);
+```
+
+Other supported verifier kinds:
+
+```java
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
+
+final TokenVerifier rsaVerifier = TokenVerifierFactory.rsa(policy, rsaPublicKey);
+final TokenVerifier ecVerifier = TokenVerifierFactory.ec(policy, ecPublicKey);
+```
+
+Verify a token:
+
+```java
+import de.gupta.commons.security.domain.model.NormalizedToken;
+import de.gupta.commons.security.domain.model.VerificationFailure;
+import de.gupta.commons.security.domain.model.VerificationResult;
+import de.gupta.commons.security.domain.model.VerificationSuccess;
+
+final VerificationResult result = verifier.verify(jwtToken);
+
+if(result instanceof
+VerificationSuccess success)
+		{
+final NormalizedToken token = success.token();
+final String subject = token.subject();
+final Set<String> roles = token.stringListClaim("user_roles");
+}
+		else if(result instanceof
+VerificationFailure failure)
+		{
+final var reason = failure.reason();
 }
 ```
 
-## Required Configuration
+## Typical Consumer Flow
 
-```properties
-security.jwt.secret=0123456789abcdef0123456789abcdef
-```
+For the current scope, a consumer typically does this:
 
-The JWT secret is required and must contain at least 32 characters.
+1. create a `TokenVerifier` once for one trust domain
+2. call `verify(...)` for each incoming token
+3. on `VerificationSuccess`, use the returned `NormalizedToken`
+4. on `VerificationFailure`, react based on `VerificationFailureReason`
 
-## Optional Configuration
+One verifier instance should usually represent one issuer/key setup.
 
-```properties
-security.jwt.roles-claim=realm_roles
-```
+That means a system can create multiple verifiers when it needs to verify tokens from different creators, for example:
 
-Defaults:
+- one verifier for external Supabase tokens
+- another verifier for internal Hermes-issued tokens
 
-- JWT subject comes from the standard `sub` claim.
-- Authorities are read from `security.jwt.roles-claim`.
-- The default roles claim is `user_roles`.
+## Verification Policy
 
-## Typical Consumer Configuration
+`TokenVerificationPolicy` controls the non-cryptographic checks applied after signature verification.
 
-The library can be used in two ways:
+Current policy options:
 
-- use `FilterChainFactory` for small convenience shortcuts
-- ignore `FilterChainFactory` completely and wire `JwtFilter` into your own `HttpSecurity` configuration directly
+- `clockSkew`
+- `requireSubject`
+- `expectedAudiences`
+- `expectedIssuer`
 
-`FilterChainFactory` is optional. It is useful when the consumer wants quick helpers for common cases such as:
-
-- exposing selected public paths
-- securing selected paths with required authorities
-- securing the remaining application paths with JWT
-
-If the consumer wants full control over Spring Security, they can skip `FilterChainFactory` and still use the rest of
-the library normally.
-
-### Option 1: Use `FilterChainFactory`
+Convenience factories:
 
 ```java
-import de.gupta.commons.security.old.ThemisConfiguration;
-import de.gupta.commons.security.old.api.chain.FilterChainFactory;
-import de.gupta.commons.security.old.token.jwt.filter.JwtFilter;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
+TokenVerificationPolicy.create();
+TokenVerificationPolicy.
 
-@Configuration
-@Import(ThemisConfiguration.class)
-class ApplicationSecurityConfiguration
-{
-	@Bean
-	@Order(1)
-	SecurityFilterChain publicPaths(HttpSecurity http) throws Exception
-	{
-		return FilterChainFactory.exposePaths(http, new String[]{"/public/**"});
-	}
+of(Duration.ZERO);
+TokenVerificationPolicy.
 
-	@Bean
-	@Order(2)
-	SecurityFilterChain adminPaths(HttpSecurity http, JwtFilter jwtFilter) throws Exception
-	{
-		return FilterChainFactory.securePathsWithAuthorities(
-				http,
-				new String[]{"/admin/**"},
-				new String[]{"ROLE_ADMIN"},
-				jwtFilter
-		);
-	}
+of(Duration.ZERO, true);
+TokenVerificationPolicy.
 
-	@Bean
-	@Order(3)
-	SecurityFilterChain applicationPaths(HttpSecurity http, JwtFilter jwtFilter) throws Exception
-	{
-		return FilterChainFactory.secureWithFilter(http, jwtFilter);
-	}
-}
+of(Duration.ZERO, true,Set.of("audience"));
+		TokenVerificationPolicy.
+
+of(Duration.ZERO, true,Set.of("audience"),Optional.
+
+of("issuer"));
 ```
 
-### Option 2: Wire `JwtFilter` Directly
+## Verification Results
 
-```java
+`VerificationResult` is a sealed hierarchy:
 
-de.gupta.commons.security.old.token.jwt.filter.JwtFilter;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+- `VerificationSuccess`
+- `VerificationFailure`
 
-@Configuration
-@Import(de.gupta.commons.security.old.ThemisConfiguration.class)
-class ApplicationSecurityConfiguration
-{
-	@Bean
-	@Order(1)
-	SecurityFilterChain publicPaths(HttpSecurity http) throws Exception
-	{
-		return http
-				.securityMatchers(matchers -> matchers.requestMatchers("/public/**"))
-				.csrf(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-				.build();
-	}
+`VerificationFailure` currently returns one of these reasons:
 
-	@Bean
-	@Order(2)
-	SecurityFilterChain applicationPaths(HttpSecurity http, JwtFilter jwtFilter) throws Exception
-	{
-		return http
-				.csrf(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/admin/**").hasAnyAuthority("ROLE_ADMIN")
-						.anyRequest().authenticated())
-				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-				.build();
-	}
-}
-```
+- `MALFORMED`
+- `INVALID_SIGNATURE`
+- `EXPIRED`
+- `NOT_YET_VALID`
+- `MISSING_SUBJECT`
+- `INVALID_ISSUER`
+- `INVALID_AUDIENCE`
+- `UNSUPPORTED`
 
-In both options, the consumer still owns:
+## Normalized Token
 
-- which paths are public
-- which paths require authentication
-- which authorities are required
-- filter-chain ordering
-- any additional Spring Security features beyond JWT verification
+On success, `themis` returns a `NormalizedToken`.
 
-## What Request Flow Looks Like
+It currently exposes:
 
-Once the consumer has imported the library configuration and wired `JwtFilter` into their security chains, the request
-flow is:
+- `rawToken()`
+- `subject()`
+- `issuer()`
+- `audiences()`
+- `issuedAt()`
+- `expiresAt()`
+- `stringClaim(name)`
+- `stringListClaim(name)`
+- `longClaim(name)`
 
-1. a request reaches a path protected by a filter chain that includes `JwtFilter`
-2. `JwtFilter` looks for the `Authorization` header
-3. if the header starts with `Bearer `, the token is passed to `JwtService`
-4. `JwtService` verifies signature, expiry, and presence of the JWT subject
-5. if verification succeeds, the token is mapped to a `JwtPrincipal`
-6. the authenticated principal is stored in Spring Security's `SecurityContext`
-7. downstream authorization rules such as `hasAnyAuthority(...)` now see the user's roles
-8. controllers and services can read the authenticated user from Spring Security or through
-   `SecurityContextQueryManager`
+This lets consumers work with a trusted, normalized token model instead of depending directly on JJWT claim APIs.
 
-If the token is missing, malformed, expired, or signed with the wrong secret, the request continues unauthenticated and
-the service's own security rules decide the response.
+## What Themis Does Not Do
 
-## What The Service Can Read After Authentication
+`themis` currently does not:
 
-After successful JWT authentication:
+- issue tokens
+- refresh tokens
+- register or authenticate users
+- resolve users from a database
+- resolve roles from a database
+- perform version/revocation checks
+- auto-wire Spring Security filters or beans
+- verify JWTs from JWK sets or key locators
 
-- `Authentication#getName()` resolves to the JWT subject
-- `Authentication#getPrincipal()` is a `JwtPrincipal`
-- `JwtPrincipal#subject()` returns the JWT subject
-- `JwtPrincipal#authorities()` returns the normalized roles extracted from the configured roles claim
-- `SecurityContextQueryManager#username()` returns the current username
-- `SecurityContextQueryManager#hasRole(...)` checks authorities case-insensitively
+Those concerns are intentionally outside the current scope of this module.
 
-## JWT Rules Applied By The Library
+## Current Scope And Status
 
-- A token is accepted only when the signature is valid, the token is not expired, and the JWT subject is present.
-- Missing or malformed tokens do not populate the `SecurityContext`.
-- Missing roles claims are treated as an empty authority set.
-- Invalid, expired, or malformed JWTs fail closed and leave the request unauthenticated.
+For the current goal, `themis` is in good shape as a small verification core for shared-secret and public-key JWTs.
 
-## Minimal Adoption Checklist
+It already gives you:
 
-- Add the dependency.
-- Add `@Import(ThemisConfiguration.class)`.
-- Set `security.jwt.secret`.
-- Add a `SecurityFilterChain` that uses the injected `JwtFilter`.
-- Choose which paths are public and which require authorities.
-- Issue JWTs whose `sub` and roles claim match the library configuration.
+- a stable verifier API
+- a policy model
+- a normalized verified-token model
+- explicit success/failure results
+- no Spring dependency in the public usage model
+
+## Known Gaps
+
+The main feature gaps right now are:
+
+- there is no dedicated Spring adapter module yet
+- there is no key-locator or JWK-set support yet
+- failure details are not yet populated beyond the enum reason
+- documentation is still early and public Javadocs are still missing
+- test coverage exists, but the new API surface could still use broader tests for issuer and audience combinations
 
 ## Test Coverage
 
-Run:
+Run tests normally with:
+
+```bash
+mvn test
+```
+
+Generate coverage reports with:
 
 ```bash
 mvn clean verify -Pcoverage
 ```
 
-JaCoCo reports are generated at `target/site/jacoco/index.html` and `target/site/jacoco/jacoco.xml`.
+JaCoCo reports are generated at:
+
+- `target/site/jacoco/index.html`
+- `target/site/jacoco/jacoco.xml`

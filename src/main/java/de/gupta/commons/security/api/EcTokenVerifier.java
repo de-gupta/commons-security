@@ -3,13 +3,13 @@ package de.gupta.commons.security.api;
 import de.gupta.commons.security.controller.TokenVerificationController;
 import de.gupta.commons.security.domain.model.VerificationResult;
 
-final class HmacTokenVerifier implements TokenVerifier
+final class EcTokenVerifier implements TokenVerifier
 {
 	private final TokenVerificationController controller;
 
 	static TokenVerifier create(final TokenVerificationController controller)
 	{
-		return new HmacTokenVerifier(controller);
+		return new EcTokenVerifier(controller);
 	}
 
 	@Override
@@ -18,7 +18,7 @@ final class HmacTokenVerifier implements TokenVerifier
 		return controller.verify(token);
 	}
 
-	private HmacTokenVerifier(final TokenVerificationController controller)
+	private EcTokenVerifier(final TokenVerificationController controller)
 	{
 		this.controller = controller;
 	}

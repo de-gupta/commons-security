@@ -16,13 +16,11 @@ import java.util.stream.Stream;
 final class TokenVerificationServiceImpl implements TokenVerificationService
 {
 	private final JwtParser jwtParser;
-	private final TokenVerificationPolicy policy;
 
-	static TokenVerificationService create(final JwtParser jwtParser, final TokenVerificationPolicy policy)
+	static TokenVerificationService create(final JwtParser jwtParser)
 	{
 		Objects.requireNonNull(jwtParser, "jwtParser must not be null");
-		Objects.requireNonNull(policy, "policy must not be null");
-		return new TokenVerificationServiceImpl(jwtParser, policy);
+		return new TokenVerificationServiceImpl(jwtParser);
 	}
 
 	@Override
@@ -30,9 +28,10 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 	{
 		try
 		{
+			final TokenVerificationPolicy policy = request.context().policy();
 			final Jws<Claims> jws = jwtParser.parseSignedClaims(request.token());
 			final Claims claims = jws.getPayload();
-			return validateClaims(claims)
+			return validateClaims(claims, policy)
 					.<VerificationResult>map(Function.identity())
 					.orElseGet(() -> VerificationSuccess.of(DefaultNormalizedToken.of(request.token(), claims)));
 		}
@@ -62,31 +61,31 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 		}
 	}
 
-	private Optional<VerificationFailure> validateClaims(final Claims claims)
+	private Optional<VerificationFailure> validateClaims(final Claims claims, final TokenVerificationPolicy policy)
 	{
 		return Stream.of(
-							 validateSubject(claims),
-							 validateIssuer(claims),
-							 validateAudience(claims))
+							 validateSubject(claims, policy),
+							 validateIssuer(claims, policy),
+							 validateAudience(claims, policy))
 		             .flatMap(Optional::stream)
 		             .findFirst();
 	}
 
-	private Optional<VerificationFailure> validateSubject(final Claims claims)
+	private Optional<VerificationFailure> validateSubject(final Claims claims, final TokenVerificationPolicy policy)
 	{
 		return policy.requireSubject() && StringSanitizationUtility.isAbsentOrBlank(claims.getSubject())
 				? Optional.of(failure(VerificationFailureReason.MISSING_SUBJECT))
 				: Optional.empty();
 	}
 
-	private Optional<VerificationFailure> validateIssuer(final Claims claims)
+	private Optional<VerificationFailure> validateIssuer(final Claims claims, final TokenVerificationPolicy policy)
 	{
 		return policy.expectedIssuer()
 		             .filter(expectedIssuer -> !expectedIssuer.equals(claims.getIssuer()))
 		             .map(_ -> failure(VerificationFailureReason.INVALID_ISSUER));
 	}
 
-	private Optional<VerificationFailure> validateAudience(final Claims claims)
+	private Optional<VerificationFailure> validateAudience(final Claims claims, final TokenVerificationPolicy policy)
 	{
 		if (policy.expectedAudiences().isEmpty())
 		{
@@ -104,9 +103,8 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 		return VerificationFailure.of(reason);
 	}
 
-	private TokenVerificationServiceImpl(final JwtParser jwtParser, final TokenVerificationPolicy policy)
+	private TokenVerificationServiceImpl(final JwtParser jwtParser)
 	{
 		this.jwtParser = jwtParser;
-		this.policy = policy;
 	}
 }

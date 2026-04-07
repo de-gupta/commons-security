@@ -1,35 +1,34 @@
 package de.gupta.commons.security.api;
 
-import de.gupta.commons.security.adapter.HmacVerificationRequestAdapter;
+import de.gupta.commons.security.adapter.RsaVerificationRequestAdapter;
 import de.gupta.commons.security.adapter.TokenVerificationServiceFacadeFactory;
 import de.gupta.commons.security.application.service.TokenVerificationServiceFactory;
 import de.gupta.commons.security.controller.TokenVerificationControllerFactory;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 
-import java.nio.charset.StandardCharsets;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Objects;
 
-final class HmacTokenVerifierFactory
+final class RsaTokenVerifierFactory
 {
-	public static TokenVerifier create(final TokenVerificationPolicy policy, final String issuerSecret)
+	static TokenVerifier create(final TokenVerificationPolicy policy, final RSAPublicKey issuerPublicKey)
 	{
 		Objects.requireNonNull(policy, "policy must not be null");
-		Objects.requireNonNull(issuerSecret, "issuerSecret must not be null");
+		Objects.requireNonNull(issuerPublicKey, "issuerPublicKey must not be null");
 
 		final var parser = Jwts.parser()
-		                       .verifyWith(Keys.hmacShaKeyFor(issuerSecret.getBytes(StandardCharsets.UTF_8)))
+		                       .verifyWith(issuerPublicKey)
 		                       .clockSkewSeconds(policy.clockSkew().toSeconds())
 		                       .build();
 
-		return HmacTokenVerifier.create(
+		return RsaTokenVerifier.create(
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								HmacVerificationRequestAdapter.create(policy))));
+								RsaVerificationRequestAdapter.create(policy))));
 	}
 
-	private HmacTokenVerifierFactory()
+	private RsaTokenVerifierFactory()
 	{
 	}
 }

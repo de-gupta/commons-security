@@ -1,9 +1,21 @@
 package de.gupta.commons.security.application.service;
 
-public record VerificationContext()
+import de.gupta.commons.security.api.TokenVerificationPolicy;
+import de.gupta.commons.security.domain.model.VerificationKeyKind;
+
+import java.time.Instant;
+import java.util.Objects;
+
+public record VerificationContext(VerificationKeyKind keyKind, TokenVerificationPolicy policy,
+                                  Instant verificationRequestedAt)
 {
-	public static VerificationContext create()
+	public static VerificationContext of(final VerificationKeyKind keyKind,
+	                                     final TokenVerificationPolicy policy,
+	                                     final Instant verificationRequestedAt)
 	{
-		return new VerificationContext();
+		Objects.requireNonNull(keyKind, "keyKind must not be null");
+		Objects.requireNonNull(policy, "policy must not be null");
+		Objects.requireNonNull(verificationRequestedAt, "verificationRequestedAt must not be null");
+		return new VerificationContext(keyKind, policy, verificationRequestedAt);
 	}
 }
