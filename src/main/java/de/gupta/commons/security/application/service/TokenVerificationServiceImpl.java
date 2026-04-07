@@ -1,5 +1,8 @@
 package de.gupta.commons.security.application.service;
 
+import de.gupta.aletheia.functional.Unfolding;
+import de.gupta.aletheia.trials.Fallible;
+import de.gupta.aletheia.trials.Portent;
 import de.gupta.commons.security.api.TokenVerificationPolicy;
 import de.gupta.commons.security.domain.model.*;
 import de.gupta.commons.security.utility.TokenUtility;
@@ -7,11 +10,10 @@ import de.gupta.commons.utility.string.StringSanitizationUtility;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SecurityException;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 final class TokenVerificationServiceImpl implements TokenVerificationService
 {
@@ -26,76 +28,69 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 	@Override
 	public VerificationResult verifyToken(final VerificationRequest request)
 	{
-		try
-		{
-			final TokenVerificationPolicy policy = request.context().policy();
-			final Jws<Claims> jws = jwtParser.parseSignedClaims(request.token());
-			final Claims claims = jws.getPayload();
-			return validateClaims(claims, policy)
-					.<VerificationResult>map(Function.identity())
-					.orElseGet(() -> VerificationSuccess.of(DefaultNormalizedToken.of(request.token(), claims)));
-		}
-		catch (final ExpiredJwtException ex)
-		{
-			return failure(VerificationFailureReason.EXPIRED);
-		}
-		catch (final PrematureJwtException ex)
-		{
-			return failure(VerificationFailureReason.NOT_YET_VALID);
-		}
-		catch (final SecurityException ex)
-		{
-			return failure(VerificationFailureReason.INVALID_SIGNATURE);
-		}
-		catch (final UnsupportedJwtException ex)
-		{
-			return failure(VerificationFailureReason.UNSUPPORTED);
-		}
-		catch (final MalformedJwtException | IllegalArgumentException ex)
-		{
-			return failure(VerificationFailureReason.MALFORMED);
-		}
-		catch (final JwtException ex)
-		{
-			return failure(VerificationFailureReason.MALFORMED);
-		}
+		return Fallible.beckon(request)
+		               .metamorphose(this::verifySignedToken, exceptionally())
+		               .coronate(Function.identity(), _ -> failure(VerificationFailureReason.MALFORMED));
 	}
 
-	private Optional<VerificationFailure> validateClaims(final Claims claims, final TokenVerificationPolicy policy)
+	private VerificationResult verifySignedToken(final VerificationRequest request)
 	{
-		return Stream.of(
-							 validateSubject(claims, policy),
-							 validateIssuer(claims, policy),
-							 validateAudience(claims, policy))
-		             .flatMap(Optional::stream)
-		             .findFirst();
+		final TokenVerificationPolicy policy = request.context().policy();
+		final Jws<Claims> jws = jwtParser.parseSignedClaims(request.token());
+		final Claims claims = jws.getPayload();
+
+		return validateClaims(claims, policy)
+				.<VerificationResult>metamorphose(Function.identity())
+				.rescue(VerificationSuccess.of(DefaultNormalizedToken.of(request.token(), claims)));
 	}
 
-	private Optional<VerificationFailure> validateSubject(final Claims claims, final TokenVerificationPolicy policy)
+	private List<Portent<VerificationResult>> exceptionally()
 	{
-		return policy.requireSubject() && StringSanitizationUtility.isAbsentOrBlank(claims.getSubject())
-				? Optional.of(failure(VerificationFailureReason.MISSING_SUBJECT))
-				: Optional.empty();
+		return List.of(
+				Portent.foretell(ExpiredJwtException.class, _ -> failure(VerificationFailureReason.EXPIRED)),
+				Portent.foretell(PrematureJwtException.class, _ -> failure(VerificationFailureReason.NOT_YET_VALID)),
+				Portent.foretell(SecurityException.class, _ -> failure(VerificationFailureReason.INVALID_SIGNATURE)),
+				Portent.foretell(UnsupportedJwtException.class, _ -> failure(VerificationFailureReason.UNSUPPORTED)),
+				Portent.foretell(MalformedJwtException.class, _ -> failure(VerificationFailureReason.MALFORMED)),
+				Portent.foretell(IllegalArgumentException.class, _ -> failure(VerificationFailureReason.MALFORMED)),
+				Portent.foretell(JwtException.class, _ -> failure(VerificationFailureReason.MALFORMED)));
 	}
 
-	private Optional<VerificationFailure> validateIssuer(final Claims claims, final TokenVerificationPolicy policy)
+	private Unfolding<VerificationFailure> validateClaims(final Claims claims, final TokenVerificationPolicy policy)
 	{
-		return policy.expectedIssuer()
-		             .filter(expectedIssuer -> !expectedIssuer.equals(claims.getIssuer()))
-		             .map(_ -> failure(VerificationFailureReason.INVALID_ISSUER));
+		return Unfolding.beckon(claims)
+		                .convoke(List.of(
+										presentClaims -> validateSubject(presentClaims, policy),
+										presentClaims -> validateIssuer(presentClaims, policy),
+										presentClaims -> validateAudience(presentClaims, policy)),
+								(Collection<? extends Unfolding<VerificationFailure>> verdicts) ->
+										verdicts.stream()
+						                        .flatMap(Unfolding::stream)
+						                        .findFirst()
+						                        .orElse(null));
 	}
 
-	private Optional<VerificationFailure> validateAudience(final Claims claims, final TokenVerificationPolicy policy)
+	private Unfolding<VerificationFailure> validateSubject(final Claims claims, final TokenVerificationPolicy policy)
 	{
-		if (policy.expectedAudiences().isEmpty())
-		{
-			return Optional.empty();
-		}
+		return Unfolding.beckon(policy)
+		                .discern(TokenVerificationPolicy::requireSubject)
+		                .discern(_ -> StringSanitizationUtility.isAbsentOrBlank(claims.getSubject()))
+		                .metamorphose(_ -> failure(VerificationFailureReason.MISSING_SUBJECT));
+	}
 
-		final Set<String> actualAudiences = TokenUtility.audiencesOf(claims);
-		return actualAudiences.containsAll(policy.expectedAudiences())
-				? Optional.empty()
-				: Optional.of(failure(VerificationFailureReason.INVALID_AUDIENCE));
+	private Unfolding<VerificationFailure> validateIssuer(final Claims claims, final TokenVerificationPolicy policy)
+	{
+		return Unfolding.augur(policy.expectedIssuer())
+		                .evolve(expectedIssuer -> !expectedIssuer.equals(claims.getIssuer()),
+								_ -> failure(VerificationFailureReason.INVALID_ISSUER));
+	}
+
+	private Unfolding<VerificationFailure> validateAudience(final Claims claims, final TokenVerificationPolicy policy)
+	{
+		return Unfolding.beckon(policy.expectedAudiences())
+		                .discern(e -> !e.isEmpty())
+		                .evolve(e -> !TokenUtility.audiencesOf(claims).containsAll(e),
+								_ -> failure(VerificationFailureReason.INVALID_AUDIENCE));
 	}
 
 	private VerificationFailure failure(final VerificationFailureReason reason)
