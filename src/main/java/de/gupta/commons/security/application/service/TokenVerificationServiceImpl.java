@@ -13,7 +13,7 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 	private final JwtParser jwtParser;
 	private final TokenVerificationPolicy policy;
 
-	public static TokenVerificationService create(final JwtParser jwtParser, final TokenVerificationPolicy policy)
+	static TokenVerificationService create(final JwtParser jwtParser, final TokenVerificationPolicy policy)
 	{
 		return new TokenVerificationServiceImpl(jwtParser, policy);
 	}

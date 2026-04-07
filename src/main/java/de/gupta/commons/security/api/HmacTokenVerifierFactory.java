@@ -2,7 +2,7 @@ package de.gupta.commons.security.api;
 
 import de.gupta.commons.security.adapter.TokenVerificationServiceFacadeFactory;
 import de.gupta.commons.security.adapter.VerificationRequestAdapter;
-import de.gupta.commons.security.application.service.TokenVerificationServices;
+import de.gupta.commons.security.application.service.TokenVerificationServiceFactory;
 import de.gupta.commons.security.application.service.VerificationContext;
 import de.gupta.commons.security.application.service.VerificationRequest;
 import io.jsonwebtoken.Jwts;
@@ -27,7 +27,7 @@ final class HmacTokenVerifierFactory
 
 		return HmacTokenVerifier.create(
 				TokenVerificationServiceFacadeFactory.create(
-						TokenVerificationServices.create(parser, policy), adapter));
+						TokenVerificationServiceFactory.create(parser, policy), adapter));
 	}
 
 	private HmacTokenVerifierFactory()
