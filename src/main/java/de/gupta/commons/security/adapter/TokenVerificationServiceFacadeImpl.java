@@ -3,20 +3,27 @@ package de.gupta.commons.security.adapter;
 import de.gupta.commons.security.application.service.TokenVerificationService;
 import de.gupta.commons.security.domain.model.VerificationResult;
 
-public final class TokenVerificationServiceFacadeImpl implements TokenVerificationServiceFacade
+final class TokenVerificationServiceFacadeImpl implements TokenVerificationServiceFacade
 {
 	private final TokenVerificationService service;
+	private final VerificationRequestAdapter adapter;
 
-	@Override
-	public VerificationResult verifyToken(final String token)
+	static TokenVerificationServiceFacade create(final TokenVerificationService service,
+	                                             final VerificationRequestAdapter adapter)
 	{
-		// TODO
-//		service.verifyToken(adapter(token));
-		return null;
+		return new TokenVerificationServiceFacadeImpl(service, adapter);
 	}
 
-	private TokenVerificationServiceFacadeImpl(final TokenVerificationService service)
+	@Override
+	public VerificationResult verify(final String token)
+	{
+		return service.verifyToken(adapter.adapt(token));
+	}
+
+	private TokenVerificationServiceFacadeImpl(final TokenVerificationService service,
+	                                           final VerificationRequestAdapter adapter)
 	{
 		this.service = service;
+		this.adapter = adapter;
 	}
 }

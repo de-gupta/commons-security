@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
-public interface VerifiedToken
+public interface NormalizedToken
 {
 	String rawToken();
 
