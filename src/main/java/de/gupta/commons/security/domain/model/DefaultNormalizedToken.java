@@ -1,5 +1,6 @@
 package de.gupta.commons.security.domain.model;
 
+import de.gupta.commons.security.utility.TokenUtility;
 import io.jsonwebtoken.Claims;
 
 import java.time.Instant;
@@ -16,26 +17,6 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 		return new DefaultNormalizedToken(rawToken, claims);
 	}
 
-	public static Set<String> audiencesOf(final Claims claims)
-	{
-		final Object rawAudience = claims.get("aud");
-		if (rawAudience instanceof String audience)
-		{
-			return audience.isBlank() ? Set.of() : Set.of(audience);
-		}
-		if (rawAudience instanceof Collection<?> values)
-		{
-			return values.stream()
-			             .filter(String.class::isInstance)
-			             .map(String.class::cast)
-			             .map(String::trim)
-			             .filter(value -> !value.isEmpty())
-			             .collect(Collectors.toUnmodifiableSet());
-		}
-		return Set.of();
-	}
-
-
 	@Override
 	public String subject()
 	{
@@ -51,7 +32,7 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 	@Override
 	public Set<String> audiences()
 	{
-		return audiencesOf(claims);
+		return TokenUtility.audiencesOf(claims);
 	}
 
 	@Override
