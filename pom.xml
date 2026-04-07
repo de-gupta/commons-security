@@ -4,7 +4,7 @@
 
     <groupId>io.github.de-gupta</groupId>
     <artifactId>themis</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
 
     <name>${artifactId}</name>
     <description>A library for security</description>
@@ -78,7 +78,7 @@
         <connection>scm:git:ssh://git@github.com/de-gupta/themis.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/de-gupta/themis.git</developerConnection>
         <url>https://github.com/de-gupta/themis.git</url>
-        <tag>HEAD</tag>
+        <tag>v1.0.1</tag>
     </scm>
 
     <build>
