@@ -5,9 +5,8 @@ import de.gupta.commons.security.domain.model.*;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SecurityException;
 
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.Set;
 
 final class TokenVerificationServiceImpl implements TokenVerificationService
 {
@@ -98,100 +97,5 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 	{
 		this.jwtParser = Objects.requireNonNull(jwtParser, "jwtParser must not be null");
 		this.policy = Objects.requireNonNull(policy, "policy must not be null");
-	}
-
-	private record DefaultNormalizedToken(String rawToken, Claims claims) implements NormalizedToken
-	{
-		static NormalizedToken of(final String rawToken, final Claims claims)
-		{
-			return new DefaultNormalizedToken(rawToken, claims);
-		}
-
-		static Set<String> audiencesOf(final Claims claims)
-		{
-			final Object rawAudience = claims.get("aud");
-			if (rawAudience instanceof String audience)
-			{
-				return audience.isBlank() ? Set.of() : Set.of(audience);
-			}
-			if (rawAudience instanceof Collection<?> values)
-			{
-				return values.stream()
-				             .filter(String.class::isInstance)
-				             .map(String.class::cast)
-				             .map(String::trim)
-				             .filter(value -> !value.isEmpty())
-				             .collect(Collectors.toUnmodifiableSet());
-			}
-			return Set.of();
-		}
-
-
-		@Override
-		public String subject()
-		{
-			return claims.getSubject();
-		}
-
-		@Override
-		public Optional<String> issuer()
-		{
-			return Optional.ofNullable(claims.getIssuer()).map(String::trim).filter(value -> !value.isEmpty());
-		}
-
-		@Override
-		public Set<String> audiences()
-		{
-			return audiencesOf(claims);
-		}
-
-		@Override
-		public Optional<Instant> issuedAt()
-		{
-			return Optional.ofNullable(claims.getIssuedAt()).map(Date::toInstant);
-		}
-
-		@Override
-		public Optional<Instant> expiresAt()
-		{
-			return Optional.ofNullable(claims.getExpiration()).map(Date::toInstant);
-		}
-
-		@Override
-		public Optional<String> stringClaim(final String name)
-		{
-			return Optional.ofNullable(claims.get(name))
-			               .filter(String.class::isInstance)
-			               .map(String.class::cast)
-			               .map(String::trim)
-			               .filter(value -> !value.isEmpty());
-		}
-
-		@Override
-		public Set<String> stringListClaim(final String name)
-		{
-			final Object rawClaim = claims.get(name);
-			if (!(rawClaim instanceof Collection<?> values))
-			{
-				return Set.of();
-			}
-
-			return values.stream()
-			             .filter(String.class::isInstance)
-			             .map(String.class::cast)
-			             .map(String::trim)
-			             .filter(value -> !value.isEmpty())
-			             .collect(Collectors.toUnmodifiableSet());
-		}
-
-		@Override
-		public Optional<Long> longClaim(final String name)
-		{
-			return Optional.ofNullable(claims.get(name))
-			               .filter(Number.class::isInstance)
-			               .map(Number.class::cast)
-			               .map(Number::longValue);
-		}
-
 	}
 }

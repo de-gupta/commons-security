@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
-public interface NormalizedToken
+public sealed interface NormalizedToken permits DefaultNormalizedToken
 {
 	String rawToken();
 

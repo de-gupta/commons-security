@@ -1,7 +1,10 @@
 package de.gupta.commons.security.api;
 
 import de.gupta.commons.security.adapter.TokenVerificationServiceFacadeFactory;
+import de.gupta.commons.security.adapter.VerificationRequestAdapter;
 import de.gupta.commons.security.application.service.TokenVerificationServices;
+import de.gupta.commons.security.application.service.VerificationContext;
+import de.gupta.commons.security.application.service.VerificationRequest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -19,11 +22,12 @@ final class HmacTokenVerifierFactory
 		                       .verifyWith(Keys.hmacShaKeyFor(issuerSecret.getBytes(StandardCharsets.UTF_8)))
 		                       .clockSkewSeconds(policy.clockSkew().toSeconds())
 		                       .build();
+		final VerificationRequestAdapter adapter =
+				token -> VerificationRequest.of(token, VerificationContext.create());
 
-		// TODO: Adapter should be created and passed
 		return HmacTokenVerifier.create(
 				TokenVerificationServiceFacadeFactory.create(
-						TokenVerificationServices.create(parser, policy), null));
+						TokenVerificationServices.create(parser, policy), adapter));
 	}
 
 	private HmacTokenVerifierFactory()
