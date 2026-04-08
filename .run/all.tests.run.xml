@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="all.tests" type="JUnit" factoryName="JUnit">
-        <module name="themis"/>
+        <module name="security.themis"/>
         <extension name="net.ashald.envfile">
             <option name="IS_ENABLED" value="false"/>
             <option name="IS_SUBST" value="false"/>
