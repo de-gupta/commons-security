@@ -29,13 +29,22 @@ final class TokenVerificationPolicyTest
 		assertThat(policy.expectedAudiences()).containsExactly("service-a");
 	}
 
+	@Test
+	void shouldOverrideRolesClaimName()
+	{
+		final TokenVerificationPolicy policy = TokenVerificationPolicy.create()
+		                                                              .withRolesClaimName("user_roles");
+
+		assertThat(policy.rolesClaimName()).isEqualTo("user_roles");
+	}
+
 	private interface PolicyFactory
 	{
 		TokenVerificationPolicy create();
 	}
 
 	private record PolicyCase(String description, PolicyFactory factory, Duration clockSkew, boolean requireSubject,
-	                          Set<String> expectedAudiences, Optional<String> expectedIssuer)
+	                          Set<String> expectedAudiences, Optional<String> expectedIssuer, String rolesClaimName)
 	{
 		@Override
 		public String toString()
@@ -50,7 +59,8 @@ final class TokenVerificationPolicyTest
 		                             final Set<String> expectedAudiences,
 		                             final Optional<String> expectedIssuer)
 		{
-			return new PolicyCase(description, factory, clockSkew, requireSubject, expectedAudiences, expectedIssuer);
+			return new PolicyCase(description, factory, clockSkew, requireSubject, expectedAudiences, expectedIssuer,
+					TokenVerificationPolicy.DEFAULT_ROLES_CLAIM_NAME);
 		}
 	}
 
@@ -68,6 +78,7 @@ final class TokenVerificationPolicyTest
 			assertThat(policy.requireSubject()).isEqualTo(testCase.requireSubject());
 			assertThat(policy.expectedAudiences()).isEqualTo(testCase.expectedAudiences());
 			assertThat(policy.expectedIssuer()).isEqualTo(testCase.expectedIssuer());
+			assertThat(policy.rolesClaimName()).isEqualTo(testCase.rolesClaimName());
 		}
 
 		private Stream<Arguments> factoryCases()

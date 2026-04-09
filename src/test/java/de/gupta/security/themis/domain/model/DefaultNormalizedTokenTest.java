@@ -31,7 +31,7 @@ final class DefaultNormalizedTokenTest
 
 	private DefaultNormalizedToken token(final Map<String, ?> claims)
 	{
-		return DefaultNormalizedToken.of("raw-token", Jwts.claims().add(new HashMap<>(claims)).build());
+		return DefaultNormalizedToken.of("raw-token", Jwts.claims().add(new HashMap<>(claims)).build(), "user_roles");
 	}
 
 	private record TokenCase(String description, DefaultNormalizedToken token,
@@ -146,7 +146,14 @@ final class DefaultNormalizedTokenTest
 								 TokenCase.of(
 										 "missing claim becomes empty set",
 										 token(Map.of()),
-										 normalizedToken -> assertThat(normalizedToken.roles()).isEmpty()))
+										 normalizedToken -> assertThat(normalizedToken.roles()).isEmpty()),
+								 TokenCase.of(
+										 "custom claim name is used to read roles",
+										 DefaultNormalizedToken.of("raw-token",
+												 Jwts.claims().add(new HashMap<>(Map.of("authorities", List.of("ROLE_ADMIN"))))
+									                 .build(),
+												 "authorities"),
+										 normalizedToken -> assertThat(normalizedToken.roles()).containsExactly("ROLE_ADMIN")))
 			             .map(Arguments::of);
 		}
 	}

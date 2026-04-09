@@ -36,7 +36,7 @@ final class TokenVerificationServiceVerifyTokenTest
 
 	private TokenVerificationPolicy defaultPolicy()
 	{
-		return TokenVerificationPolicy.of(Duration.ZERO, true);
+		return TokenVerificationPolicy.of(Duration.ZERO, true).withRolesClaimName("user_roles");
 	}
 
 	private String signedToken(final TokenSpec spec)

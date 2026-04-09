@@ -11,11 +11,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public record DefaultNormalizedToken(String rawToken, Claims claims) implements NormalizedToken
+public record DefaultNormalizedToken(String rawToken, Claims claims, String rolesClaimName) implements NormalizedToken
 {
-	public static DefaultNormalizedToken of(final String rawToken, final Claims claims)
+	public static DefaultNormalizedToken of(final String rawToken, final Claims claims, final String rolesClaimName)
 	{
-		return new DefaultNormalizedToken(rawToken, claims);
+		return new DefaultNormalizedToken(rawToken, claims, rolesClaimName);
 	}
 
 	@Override
@@ -27,7 +27,7 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 	@Override
 	public Set<String> roles()
 	{
-		return Unfolding.beckon(claims.get("user_roles"))
+		return Unfolding.beckon(claims.get(rolesClaimName))
 		                .discern(Collection.class::isInstance)
 		                .metamorphose(Collection.class::cast)
 		                .metamorphose(this::extractRoles)
