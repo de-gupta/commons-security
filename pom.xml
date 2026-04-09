@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>security.themis</artifactId>
-    <version>2.5.0</version>
+    <version>2.5.1-SNAPSHOT</version>
 
     <name>${project.artifactId}</name>
     <description>A library for security</description>
@@ -70,6 +70,6 @@
         <connection>scm:git:ssh://git@github.com/de-gupta/security.themis.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/de-gupta/security.themis.git</developerConnection>
         <url>https://github.com/de-gupta/security.themis.git</url>
-        <tag>v2.5.0</tag>
+        <tag>HEAD</tag>
     </scm>
 </project>
