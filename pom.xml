@@ -1,75 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.de-gupta</groupId>
     <artifactId>security.themis</artifactId>
     <version>2.3.1-SNAPSHOT</version>
 
-    <name>${artifactId}</name>
+    <name>${project.artifactId}</name>
     <description>A library for security</description>
     <url>https://github.com/de-gupta/security.themis.git</url>
 
     <properties>
         <java.version>25</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <aletheia.version>0.5.0</aletheia.version>
-        <athena.version>0.4.0</athena.version>
-
-        <junit.jupiter.version>5.13.1</junit.jupiter.version>
-        <assertj.core.version>3.27.3</assertj.core.version>
+        <security.dependencies.bom.version>0.1.1</security.dependencies.bom.version>
 
         <maven.release.plugin.version>3.1.1</maven.release.plugin.version>
         <maven.gpg.plugin.version>3.2.8</maven.gpg.plugin.version>
-
         <maven.central.publishing.version>0.8.0</maven.central.publishing.version>
         <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.11.2</maven.javadoc.plugin.version>
         <jacoco.version>0.8.14</jacoco.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.github.de-gupta</groupId>
+                <artifactId>security.dependencies.bom</artifactId>
+                <version>${security.dependencies.bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+
+        <dependency>
+            <groupId>io.github.de-gupta</groupId>
+            <artifactId>aletheia</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.de-gupta</groupId>
+            <artifactId>athena</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.13.0</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.13.0</version>
             <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.de-gupta</groupId>
-            <artifactId>aletheia</artifactId>
-            <version>${aletheia.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.de-gupta</groupId>
-            <artifactId>athena</artifactId>
-            <version>${athena.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>${assertj.core.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -99,7 +99,6 @@
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
@@ -202,5 +201,4 @@
             <email>221553154+de-gupta@users.noreply.github.com</email>
         </developer>
     </developers>
-
 </project>
