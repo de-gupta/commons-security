@@ -1,6 +1,7 @@
 package de.gupta.security.themis.application.service;
 
 import de.gupta.security.themis.TestJwtTokens;
+import de.gupta.security.themis.api.TokenClaimConfiguration;
 import de.gupta.security.themis.api.TokenVerificationPolicy;
 import de.gupta.security.themis.domain.model.*;
 import io.jsonwebtoken.Jwts;
@@ -36,7 +37,12 @@ final class TokenVerificationServiceVerifyTokenTest
 
 	private TokenVerificationPolicy defaultPolicy()
 	{
-		return TokenVerificationPolicy.of(Duration.ZERO, true).withRolesClaimName("user_roles");
+		return TokenVerificationPolicy.of(Duration.ZERO, true);
+	}
+
+	private TokenClaimConfiguration defaultConfiguration()
+	{
+		return TokenClaimConfiguration.create().withRolesClaimName("user_roles");
 	}
 
 	private String signedToken(final TokenSpec spec)
@@ -77,12 +83,13 @@ final class TokenVerificationServiceVerifyTokenTest
 		private static SuccessCase of(final String description,
 		                              final String token,
 		                              final TokenVerificationPolicy policy,
+		                              final TokenClaimConfiguration configuration,
 		                              final String parserSecret,
 		                              final Consumer<NormalizedToken> assertion)
 		{
 			return new SuccessCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, policy, Instant.now())),
+							VerificationContext.of(VerificationKeyKind.HMAC, policy, configuration, Instant.now())),
 					parserSecret,
 					assertion);
 		}
@@ -100,12 +107,13 @@ final class TokenVerificationServiceVerifyTokenTest
 		private static FailureCase of(final String description,
 		                              final String token,
 		                              final TokenVerificationPolicy policy,
+		                              final TokenClaimConfiguration configuration,
 		                              final String parserSecret,
 		                              final VerificationFailureReason expectedReason)
 		{
 			return new FailureCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, policy, Instant.now())),
+							VerificationContext.of(VerificationKeyKind.HMAC, policy, configuration, Instant.now())),
 					parserSecret,
 					expectedReason);
 		}
@@ -150,6 +158,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 TestJwtTokens.tokenWithRoles("user@example.com", Instant.now().plusSeconds(3600),
 												 List.of("ROLE_USER")),
 										 defaultPolicy(),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 token ->
 										 {
@@ -168,6 +177,7 @@ final class TokenVerificationServiceVerifyTokenTest
 												 TestJwtTokens.SECRET)),
 										 TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(EXPECTED_AUDIENCE),
 												 Optional.of(EXPECTED_ISSUER)),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 token ->
 										 {
@@ -179,6 +189,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 "valid token without subject requirement",
 										 TestJwtTokens.tokenWithoutSubject(Instant.now().plusSeconds(3600)),
 										 TokenVerificationPolicy.of(Duration.ZERO, false),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 token -> assertThat(token.subject()).isNull()))
 			             .map(Arguments::of);
@@ -207,6 +218,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 TestJwtTokens.tokenWithRoles("expired@example.com", Instant.now().minusSeconds(60),
 												 List.of("ROLE_USER")),
 										 defaultPolicy(),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.EXPIRED),
 								 FailureCase.of(
@@ -220,6 +232,7 @@ final class TokenVerificationServiceVerifyTokenTest
 												 Map.of("user_roles", List.of("ROLE_USER")),
 												 TestJwtTokens.SECRET)),
 										 defaultPolicy(),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.NOT_YET_VALID))
 			             .map(Arguments::of);
@@ -247,6 +260,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 "missing subject when subject required",
 										 TestJwtTokens.tokenWithoutSubject(Instant.now().plusSeconds(3600)),
 										 defaultPolicy(),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.MISSING_SUBJECT),
 								 FailureCase.of(
@@ -260,6 +274,7 @@ final class TokenVerificationServiceVerifyTokenTest
 												 Map.of("user_roles", List.of("ROLE_USER")),
 												 TestJwtTokens.SECRET)),
 										 TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.of(EXPECTED_ISSUER)),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.INVALID_ISSUER),
 								 FailureCase.of(
@@ -274,6 +289,7 @@ final class TokenVerificationServiceVerifyTokenTest
 												 TestJwtTokens.SECRET)),
 										 TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(EXPECTED_AUDIENCE),
 												 Optional.empty()),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.INVALID_AUDIENCE))
 			             .map(Arguments::of);
@@ -302,18 +318,21 @@ final class TokenVerificationServiceVerifyTokenTest
 										 TestJwtTokens.tokenWithSecret("signature@example.com", Instant.now().plusSeconds(3600),
 												 List.of("ROLE_USER"), "fedcba9876543210fedcba9876543210"),
 										 defaultPolicy(),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.INVALID_SIGNATURE),
 								 FailureCase.of(
 										 "malformed token",
 										 "not-a-jwt",
 										 defaultPolicy(),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.MALFORMED),
 								 FailureCase.of(
 										 "unsupported unsecured token",
 										 unsecuredToken("unsigned@example.com"),
 										 defaultPolicy(),
+										 defaultConfiguration(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.UNSUPPORTED))
 			             .map(Arguments::of);

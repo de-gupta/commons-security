@@ -17,12 +17,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 final class TokenVerifierFactoryTest
 {
+	private static final TokenClaimConfiguration USER_ROLES_CONFIGURATION =
+			TokenClaimConfiguration.create().withRolesClaimName("user_roles");
+
 	@Test
 	void shouldVerifyValidToken()
 	{
 		final TokenVerifier verifier = TokenVerifierFactory.hmac(
-				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty())
-				                       .withRolesClaimName("user_roles"),
+				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty()),
+				USER_ROLES_CONFIGURATION,
 				TestJwtTokens.SECRET);
 		final String token = TestJwtTokens.tokenWithRoles("user@example.com", Instant.now().plusSeconds(3600),
 				List.of("ROLE_USER"));
@@ -38,8 +41,10 @@ final class TokenVerifierFactoryTest
 	@Test
 	void shouldRejectTokenWithWrongSignature()
 	{
-		final TokenVerifier verifier =
-				TokenVerifierFactory.hmac(TokenVerificationPolicy.create(), TestJwtTokens.SECRET);
+		final TokenVerifier verifier = TokenVerifierFactory.hmac(
+				TokenVerificationPolicy.create(),
+				TokenClaimConfiguration.create(),
+				TestJwtTokens.SECRET);
 		final String token = TestJwtTokens.tokenWithSecret("user@example.com", Instant.now().plusSeconds(3600),
 				List.of("ROLE_USER"), "fedcba9876543210fedcba9876543210");
 
@@ -54,6 +59,7 @@ final class TokenVerifierFactoryTest
 	{
 		final TokenVerifier verifier = TokenVerifierFactory.hmac(
 				TokenVerificationPolicy.of(Duration.ZERO, true),
+				TokenClaimConfiguration.create(),
 				TestJwtTokens.SECRET);
 		final String token = TestJwtTokens.tokenWithoutSubject(Instant.now().plusSeconds(3600));
 
@@ -67,8 +73,8 @@ final class TokenVerifierFactoryTest
 	void shouldVerifyValidRsaToken()
 	{
 		final TokenVerifier verifier = TokenVerifierFactory.rsa(
-				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty())
-				                       .withRolesClaimName("user_roles"),
+				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty()),
+				USER_ROLES_CONFIGURATION,
 				TestJwtTokens.rsaPublicKey());
 		final String token = TestJwtTokens.rsaTokenWithRoles("rsa-user@example.com", Instant.now().plusSeconds(3600),
 				List.of("ROLE_RSA"));
@@ -85,8 +91,8 @@ final class TokenVerifierFactoryTest
 	void shouldVerifyValidEcToken()
 	{
 		final TokenVerifier verifier = TokenVerifierFactory.ec(
-				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty())
-				                       .withRolesClaimName("user_roles"),
+				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty()),
+				USER_ROLES_CONFIGURATION,
 				TestJwtTokens.ecPublicKey());
 		final String token = TestJwtTokens.ecTokenWithRoles("ec-user@example.com", Instant.now().plusSeconds(3600),
 				List.of("ROLE_EC"));

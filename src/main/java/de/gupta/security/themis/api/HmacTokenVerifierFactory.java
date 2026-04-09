@@ -12,9 +12,12 @@ import java.util.Objects;
 
 final class HmacTokenVerifierFactory
 {
-	public static TokenVerifier create(final TokenVerificationPolicy policy, final String issuerSecret)
+	public static TokenVerifier create(final TokenVerificationPolicy policy,
+	                                   final TokenClaimConfiguration configuration,
+	                                   final String issuerSecret)
 	{
 		Objects.requireNonNull(policy, "policy must not be null");
+		Objects.requireNonNull(configuration, "configuration must not be null");
 		Objects.requireNonNull(issuerSecret, "issuerSecret must not be null");
 
 		final var parser = Jwts.parser()
@@ -26,7 +29,7 @@ final class HmacTokenVerifierFactory
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								HmacVerificationRequestAdapter.create(policy))));
+								HmacVerificationRequestAdapter.create(policy, configuration))));
 	}
 
 	private HmacTokenVerifierFactory()

@@ -11,9 +11,11 @@ import java.util.Objects;
 
 final class RsaTokenVerifierFactory
 {
-	static TokenVerifier create(final TokenVerificationPolicy policy, final RSAPublicKey issuerPublicKey)
+	static TokenVerifier create(final TokenVerificationPolicy policy, final TokenClaimConfiguration configuration,
+	                            final RSAPublicKey issuerPublicKey)
 	{
 		Objects.requireNonNull(policy, "policy must not be null");
+		Objects.requireNonNull(configuration, "configuration must not be null");
 		Objects.requireNonNull(issuerPublicKey, "issuerPublicKey must not be null");
 
 		final var parser = Jwts.parser()
@@ -25,7 +27,7 @@ final class RsaTokenVerifierFactory
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								RsaVerificationRequestAdapter.create(policy))));
+								RsaVerificationRequestAdapter.create(policy, configuration))));
 	}
 
 	private RsaTokenVerifierFactory()

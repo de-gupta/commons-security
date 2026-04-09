@@ -1,5 +1,6 @@
 package de.gupta.security.themis.adapter;
 
+import de.gupta.security.themis.api.TokenClaimConfiguration;
 import de.gupta.security.themis.api.TokenVerificationPolicy;
 import de.gupta.security.themis.application.service.VerificationContext;
 import de.gupta.security.themis.application.service.VerificationRequest;
@@ -11,11 +12,14 @@ import java.util.Objects;
 public final class RsaVerificationRequestAdapter implements VerificationRequestAdapter
 {
 	private final TokenVerificationPolicy policy;
+	private final TokenClaimConfiguration configuration;
 
-	public static VerificationRequestAdapter create(final TokenVerificationPolicy policy)
+	public static VerificationRequestAdapter create(final TokenVerificationPolicy policy,
+	                                                final TokenClaimConfiguration configuration)
 	{
 		Objects.requireNonNull(policy, "policy must not be null");
-		return new RsaVerificationRequestAdapter(policy);
+		Objects.requireNonNull(configuration, "configuration must not be null");
+		return new RsaVerificationRequestAdapter(policy, configuration);
 	}
 
 	@Override
@@ -23,11 +27,13 @@ public final class RsaVerificationRequestAdapter implements VerificationRequestA
 	{
 		return VerificationRequest.of(
 				token,
-				VerificationContext.of(VerificationKeyKind.RSA, policy, Instant.now()));
+				VerificationContext.of(VerificationKeyKind.RSA, policy, configuration, Instant.now()));
 	}
 
-	private RsaVerificationRequestAdapter(final TokenVerificationPolicy policy)
+	private RsaVerificationRequestAdapter(final TokenVerificationPolicy policy,
+	                                      final TokenClaimConfiguration configuration)
 	{
 		this.policy = policy;
+		this.configuration = configuration;
 	}
 }

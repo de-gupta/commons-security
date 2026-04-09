@@ -11,9 +11,11 @@ import java.util.Objects;
 
 final class EcTokenVerifierFactory
 {
-	static TokenVerifier create(final TokenVerificationPolicy policy, final ECPublicKey issuerPublicKey)
+	static TokenVerifier create(final TokenVerificationPolicy policy, final TokenClaimConfiguration configuration,
+	                            final ECPublicKey issuerPublicKey)
 	{
 		Objects.requireNonNull(policy, "policy must not be null");
+		Objects.requireNonNull(configuration, "configuration must not be null");
 		Objects.requireNonNull(issuerPublicKey, "issuerPublicKey must not be null");
 
 		final var parser = Jwts.parser()
@@ -25,7 +27,7 @@ final class EcTokenVerifierFactory
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								EcVerificationRequestAdapter.create(policy))));
+								EcVerificationRequestAdapter.create(policy, configuration))));
 	}
 
 	private EcTokenVerifierFactory()

@@ -5,19 +5,22 @@ import java.security.interfaces.RSAPublicKey;
 
 public final class TokenVerifierFactory
 {
-	public static TokenVerifier hmac(final TokenVerificationPolicy policy, final String issuerSecret)
+	public static TokenVerifier hmac(final TokenVerificationPolicy policy, final TokenClaimConfiguration configuration,
+	                                 final String issuerSecret)
 	{
-		return HmacTokenVerifierFactory.create(policy, issuerSecret);
+		return HmacTokenVerifierFactory.create(policy, configuration, issuerSecret);
 	}
 
-	public static TokenVerifier rsa(final TokenVerificationPolicy policy, final RSAPublicKey issuerPublicKey)
+	public static TokenVerifier rsa(final TokenVerificationPolicy policy, final TokenClaimConfiguration configuration,
+	                                final RSAPublicKey issuerPublicKey)
 	{
-		return RsaTokenVerifierFactory.create(policy, issuerPublicKey);
+		return RsaTokenVerifierFactory.create(policy, configuration, issuerPublicKey);
 	}
 
-	public static TokenVerifier ec(final TokenVerificationPolicy policy, final ECPublicKey issuerPublicKey)
+	public static TokenVerifier ec(final TokenVerificationPolicy policy, final TokenClaimConfiguration configuration,
+	                               final ECPublicKey issuerPublicKey)
 	{
-		return EcTokenVerifierFactory.create(policy, issuerPublicKey);
+		return EcTokenVerifierFactory.create(policy, configuration, issuerPublicKey);
 	}
 
 	private TokenVerifierFactory()

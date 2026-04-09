@@ -1,5 +1,6 @@
 package de.gupta.security.themis.adapter;
 
+import de.gupta.security.themis.api.TokenClaimConfiguration;
 import de.gupta.security.themis.api.TokenVerificationPolicy;
 import de.gupta.security.themis.application.service.VerificationContext;
 import de.gupta.security.themis.application.service.VerificationRequest;
@@ -11,11 +12,14 @@ import java.util.Objects;
 public final class HmacVerificationRequestAdapter implements VerificationRequestAdapter
 {
 	private final TokenVerificationPolicy policy;
+	private final TokenClaimConfiguration configuration;
 
-	public static VerificationRequestAdapter create(final TokenVerificationPolicy policy)
+	public static VerificationRequestAdapter create(final TokenVerificationPolicy policy,
+	                                                final TokenClaimConfiguration configuration)
 	{
 		Objects.requireNonNull(policy, "policy must not be null");
-		return new HmacVerificationRequestAdapter(policy);
+		Objects.requireNonNull(configuration, "configuration must not be null");
+		return new HmacVerificationRequestAdapter(policy, configuration);
 	}
 
 	@Override
@@ -23,11 +27,13 @@ public final class HmacVerificationRequestAdapter implements VerificationRequest
 	{
 		return VerificationRequest.of(
 				token,
-				VerificationContext.of(VerificationKeyKind.HMAC, policy, Instant.now()));
+				VerificationContext.of(VerificationKeyKind.HMAC, policy, configuration, Instant.now()));
 	}
 
-	private HmacVerificationRequestAdapter(final TokenVerificationPolicy policy)
+	private HmacVerificationRequestAdapter(final TokenVerificationPolicy policy,
+	                                       final TokenClaimConfiguration configuration)
 	{
 		this.policy = policy;
+		this.configuration = configuration;
 	}
 }
