@@ -48,6 +48,12 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 	}
 
 	@Override
+	public Optional<Instant> notBefore()
+	{
+		return Optional.ofNullable(claims.getNotBefore()).map(Date::toInstant);
+	}
+
+	@Override
 	public Optional<String> stringClaim(final String name)
 	{
 		return Optional.ofNullable(claims.get(name))
