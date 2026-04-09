@@ -1,5 +1,6 @@
 package de.gupta.security.themis.domain.model;
 
+import de.gupta.aletheia.functional.Unfolding;
 import de.gupta.security.themis.utility.TokenUtility;
 import io.jsonwebtoken.Claims;
 
@@ -21,6 +22,16 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 	public String subject()
 	{
 		return claims.getSubject();
+	}
+
+	@Override
+	public Set<String> roles()
+	{
+		return Unfolding.beckon(claims.get("user_roles"))
+		                .discern(Collection.class::isInstance)
+		                .metamorphose(Collection.class::cast)
+		                .metamorphose(this::extractRoles)
+		                .ordain(Set.of());
 	}
 
 	@Override
@@ -51,23 +62,6 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 	public Optional<Instant> notBefore()
 	{
 		return Optional.ofNullable(claims.getNotBefore()).map(Date::toInstant);
-	}
-
-	@Override
-	public Set<String> roles()
-	{
-		final Object rawClaim = claims.get("user_roles");
-		if (!(rawClaim instanceof Collection<?> values))
-		{
-			return Set.of();
-		}
-
-		return values.stream()
-		             .filter(String.class::isInstance)
-		             .map(String.class::cast)
-		             .map(String::trim)
-		             .filter(value -> !value.isEmpty())
-		             .collect(Collectors.toUnmodifiableSet());
 	}
 
 	@Override
@@ -104,5 +98,15 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 		               .filter(Number.class::isInstance)
 		               .map(Number.class::cast)
 		               .map(Number::longValue);
+	}
+
+	private Set<String> extractRoles(final Collection<?> values)
+	{
+		return values.stream()
+		             .filter(String.class::isInstance)
+		             .map(String.class::cast)
+		             .map(String::trim)
+		             .filter(value -> !value.isEmpty())
+		             .collect(Collectors.toUnmodifiableSet());
 	}
 }

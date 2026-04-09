@@ -41,7 +41,7 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 
 		return validateClaims(claims, policy)
 				.<VerificationResult>metamorphose(Function.identity())
-				.rescue(VerificationSuccess.of(DefaultNormalizedToken.of(request.token(), claims)));
+				.ordain(VerificationSuccess.of(DefaultNormalizedToken.of(request.token(), claims)));
 	}
 
 	private List<Portent<VerificationResult>> exceptionally()
