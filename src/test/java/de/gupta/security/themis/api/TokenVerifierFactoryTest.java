@@ -31,7 +31,7 @@ final class TokenVerifierFactoryTest
 		assertThat(result).isInstanceOf(VerificationSuccess.class);
 		final VerificationSuccess success = (VerificationSuccess) result;
 		assertThat(success.token().subject()).isEqualTo("user@example.com");
-		assertThat(success.token().stringListClaim("user_roles")).containsExactly("ROLE_USER");
+		assertThat(success.token().roles()).containsExactly("ROLE_USER");
 	}
 
 	@Test
@@ -76,7 +76,7 @@ final class TokenVerifierFactoryTest
 		assertThat(result).isInstanceOf(VerificationSuccess.class);
 		final VerificationSuccess success = (VerificationSuccess) result;
 		assertThat(success.token().subject()).isEqualTo("rsa-user@example.com");
-		assertThat(success.token().stringListClaim("user_roles")).containsExactly("ROLE_RSA");
+		assertThat(success.token().roles()).containsExactly("ROLE_RSA");
 	}
 
 	@Test
@@ -93,6 +93,6 @@ final class TokenVerifierFactoryTest
 		assertThat(result).isInstanceOf(VerificationSuccess.class);
 		final VerificationSuccess success = (VerificationSuccess) result;
 		assertThat(success.token().subject()).isEqualTo("ec-user@example.com");
-		assertThat(success.token().stringListClaim("user_roles")).containsExactly("ROLE_EC");
+		assertThat(success.token().roles()).containsExactly("ROLE_EC");
 	}
 }

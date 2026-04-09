@@ -154,7 +154,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 token ->
 										 {
 											 assertThat(token.subject()).isEqualTo("user@example.com");
-											 assertThat(token.stringListClaim("user_roles")).containsExactly("ROLE_USER");
+											 assertThat(token.roles()).containsExactly("ROLE_USER");
 										 }),
 								 SuccessCase.of(
 										 "valid token with issuer and audience",

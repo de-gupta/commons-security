@@ -66,6 +66,7 @@ final class DefaultNormalizedTokenTest
 		{
 			final Instant issuedAt = Instant.parse("2026-04-07T10:15:30Z");
 			final Instant expiresAt = Instant.parse("2026-04-07T11:15:30Z");
+			final Instant notBefore = Instant.parse("2026-04-07T09:15:30Z");
 
 			return Stream.of(
 								 TokenCase.of(
@@ -91,11 +92,66 @@ final class DefaultNormalizedTokenTest
 										 {
 											 assertThat(normalizedToken.issuedAt()).isEmpty();
 											 assertThat(normalizedToken.expiresAt()).isEmpty();
+										 }),
+								 TokenCase.of(
+										 "notBefore is present when set",
+										 token(Map.of("nbf", Date.from(notBefore))),
+										 normalizedToken -> assertThat(normalizedToken.notBefore()).contains(notBefore)),
+								 TokenCase.of(
+										 "notBefore is absent when not set",
+										 token(Map.of()),
+										 normalizedToken -> assertThat(normalizedToken.notBefore()).isEmpty()),
+								 TokenCase.of(
+										 "notBefore before issuedAt is honoured",
+										 token(Map.of("iat", Date.from(issuedAt), "nbf", Date.from(notBefore))),
+										 normalizedToken ->
+										 {
+											 assertThat(normalizedToken.issuedAt()).contains(issuedAt);
+											 assertThat(normalizedToken.notBefore()).contains(notBefore);
+											 assertThat(normalizedToken.notBefore().get())
+													 .isBefore(normalizedToken.issuedAt().get());
 										 }))
 			             .map(Arguments::of);
 		}
 	}
 
+	@Nested
+	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+	final class Roles
+	{
+		@ParameterizedTest(name = "{0}")
+		@MethodSource("rolesCases")
+		void shouldExposeRoles(final TokenCase testCase)
+		{
+			testCase.assertion().accept(testCase.token());
+		}
+
+		private Stream<Arguments> rolesCases()
+		{
+			return Stream.of(
+								 TokenCase.of(
+										 "roles are returned trimmed",
+										 token(Map.of("user_roles", List.of(" ROLE_USER ", "ROLE_ADMIN"))),
+										 normalizedToken -> assertThat(normalizedToken.roles())
+												 .containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN")),
+								 TokenCase.of(
+										 "mixed collection filters non strings and blanks",
+										 token(Map.of("user_roles", List.of(" ROLE_USER ", 7, "   ", "ROLE_ADMIN"))),
+										 normalizedToken -> assertThat(normalizedToken.roles())
+												 .containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN")),
+								 TokenCase.of(
+										 "non collection claim becomes empty set",
+										 token(Map.of("user_roles", "ROLE_USER")),
+										 normalizedToken -> assertThat(normalizedToken.roles()).isEmpty()),
+								 TokenCase.of(
+										 "missing claim becomes empty set",
+										 token(Map.of()),
+										 normalizedToken -> assertThat(normalizedToken.roles()).isEmpty()))
+			             .map(Arguments::of);
+		}
+	}
+
+	@Deprecated
 	@Nested
 	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 	final class StringClaims
@@ -131,6 +187,7 @@ final class DefaultNormalizedTokenTest
 		}
 	}
 
+	@Deprecated
 	@Nested
 	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 	final class StringListClaims
@@ -167,6 +224,7 @@ final class DefaultNormalizedTokenTest
 		}
 	}
 
+	@Deprecated
 	@Nested
 	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 	final class LongClaims

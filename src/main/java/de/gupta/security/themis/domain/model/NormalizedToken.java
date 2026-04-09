@@ -10,6 +10,8 @@ public sealed interface NormalizedToken permits DefaultNormalizedToken
 
 	String subject();
 
+	Set<String> roles();
+
 	Optional<String> issuer();
 
 	Set<String> audiences();

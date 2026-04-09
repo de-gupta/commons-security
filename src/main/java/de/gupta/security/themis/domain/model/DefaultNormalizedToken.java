@@ -54,6 +54,23 @@ public record DefaultNormalizedToken(String rawToken, Claims claims) implements 
 	}
 
 	@Override
+	public Set<String> roles()
+	{
+		final Object rawClaim = claims.get("user_roles");
+		if (!(rawClaim instanceof Collection<?> values))
+		{
+			return Set.of();
+		}
+
+		return values.stream()
+		             .filter(String.class::isInstance)
+		             .map(String.class::cast)
+		             .map(String::trim)
+		             .filter(value -> !value.isEmpty())
+		             .collect(Collectors.toUnmodifiableSet());
+	}
+
+	@Override
 	public Optional<String> stringClaim(final String name)
 	{
 		return Optional.ofNullable(claims.get(name))
