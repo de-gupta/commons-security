@@ -16,6 +16,8 @@ public sealed interface NormalizedToken permits DefaultNormalizedToken
 
 	Set<String> audiences();
 
+	Optional<Number> version();
+
 	Optional<Instant> issuedAt();
 
 	Optional<Instant> expiresAt();

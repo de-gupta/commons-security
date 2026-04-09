@@ -11,11 +11,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public record DefaultNormalizedToken(String rawToken, Claims claims, String rolesClaimName) implements NormalizedToken
+public record DefaultNormalizedToken(String rawToken, Claims claims, String rolesClaimName,
+                                     String versionClaimName) implements NormalizedToken
 {
-	public static DefaultNormalizedToken of(final String rawToken, final Claims claims, final String rolesClaimName)
+	public static DefaultNormalizedToken of(final String rawToken, final Claims claims, final String rolesClaimName,
+	                                        final String versionClaimName)
 	{
-		return new DefaultNormalizedToken(rawToken, claims, rolesClaimName);
+		return new DefaultNormalizedToken(rawToken, claims, rolesClaimName, versionClaimName);
 	}
 
 	@Override
@@ -62,6 +64,14 @@ public record DefaultNormalizedToken(String rawToken, Claims claims, String role
 	public Optional<Instant> notBefore()
 	{
 		return Optional.ofNullable(claims.getNotBefore()).map(Date::toInstant);
+	}
+
+	@Override
+	public Optional<Number> version()
+	{
+		return Optional.ofNullable(claims.get(versionClaimName))
+		               .filter(Number.class::isInstance)
+		               .map(Number.class::cast);
 	}
 
 	@Override

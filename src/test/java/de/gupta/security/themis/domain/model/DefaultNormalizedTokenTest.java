@@ -31,7 +31,8 @@ final class DefaultNormalizedTokenTest
 
 	private DefaultNormalizedToken token(final Map<String, ?> claims)
 	{
-		return DefaultNormalizedToken.of("raw-token", Jwts.claims().add(new HashMap<>(claims)).build(), "user_roles");
+		return DefaultNormalizedToken.of("raw-token", Jwts.claims().add(new HashMap<>(claims)).build(), "user_roles",
+				"ver");
 	}
 
 	private record TokenCase(String description, DefaultNormalizedToken token,
@@ -152,8 +153,51 @@ final class DefaultNormalizedTokenTest
 										 DefaultNormalizedToken.of("raw-token",
 												 Jwts.claims().add(new HashMap<>(Map.of("authorities", List.of("ROLE_ADMIN"))))
 									                 .build(),
-												 "authorities"),
+												 "authorities", "ver"),
 										 normalizedToken -> assertThat(normalizedToken.roles()).containsExactly("ROLE_ADMIN")))
+			             .map(Arguments::of);
+		}
+	}
+
+	@Nested
+	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+	final class Version
+	{
+		@ParameterizedTest(name = "{0}")
+		@MethodSource("versionCases")
+		void shouldExposeVersion(final TokenCase testCase)
+		{
+			testCase.assertion().accept(testCase.token());
+		}
+
+		private Stream<Arguments> versionCases()
+		{
+			return Stream.of(
+								 TokenCase.of(
+										 "integer version is exposed as Number",
+										 token(Map.of("ver", 2)),
+										 normalizedToken -> assertThat(normalizedToken.version())
+												 .hasValueSatisfying(v -> assertThat(v.intValue()).isEqualTo(2))),
+								 TokenCase.of(
+										 "decimal version is exposed as Number",
+										 token(Map.of("ver", 1.5)),
+										 normalizedToken -> assertThat(normalizedToken.version())
+												 .hasValueSatisfying(v -> assertThat(v.doubleValue()).isEqualTo(1.5))),
+								 TokenCase.of(
+										 "non number version is absent",
+										 token(Map.of("ver", "2")),
+										 normalizedToken -> assertThat(normalizedToken.version()).isEmpty()),
+								 TokenCase.of(
+										 "missing version is absent",
+										 token(Map.of()),
+										 normalizedToken -> assertThat(normalizedToken.version()).isEmpty()),
+								 TokenCase.of(
+										 "custom claim name is used to read version",
+										 DefaultNormalizedToken.of("raw-token",
+												 Jwts.claims().add(new HashMap<>(Map.of("revision", 3))).build(),
+												 "user_roles", "revision"),
+										 normalizedToken -> assertThat(normalizedToken.version())
+												 .hasValueSatisfying(v -> assertThat(v.intValue()).isEqualTo(3))))
 			             .map(Arguments::of);
 		}
 	}
@@ -248,16 +292,17 @@ final class DefaultNormalizedTokenTest
 			return Stream.of(
 								 TokenCase.of(
 										 "number claim is exposed as long",
-										 token(Map.of("ver", 7)),
-										 normalizedToken -> assertThat(normalizedToken.longClaim("ver")).contains(7L)),
+										 token(Map.of("count", 7)),
+										 normalizedToken -> assertThat(normalizedToken.longClaim("count")).contains(
+												 7L)),
 								 TokenCase.of(
 										 "non number claim is absent",
-										 token(Map.of("ver", "7")),
-										 normalizedToken -> assertThat(normalizedToken.longClaim("ver")).isEmpty()),
+										 token(Map.of("count", "7")),
+										 normalizedToken -> assertThat(normalizedToken.longClaim("count")).isEmpty()),
 								 TokenCase.of(
 										 "missing number claim is absent",
 										 token(Map.of()),
-										 normalizedToken -> assertThat(normalizedToken.longClaim("ver")).isEmpty()))
+										 normalizedToken -> assertThat(normalizedToken.longClaim("count")).isEmpty()))
 			             .map(Arguments::of);
 		}
 	}
