@@ -8,17 +8,28 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.util.Date;
 import java.util.Objects;
 
 final class HmacTokenVerifierFactory
 {
 	public static TokenVerifier create(final TokenVerificationPolicy policy, final String issuerSecret)
 	{
+		return create(policy, issuerSecret, Clock.systemUTC());
+	}
+
+	public static TokenVerifier create(final TokenVerificationPolicy policy,
+	                                   final String issuerSecret,
+	                                   final Clock clock)
+	{
 		Objects.requireNonNull(policy, "policy must not be null");
 		Objects.requireNonNull(issuerSecret, "issuerSecret must not be null");
+		Objects.requireNonNull(clock, "clock must not be null");
 
 		final var parser = Jwts.parser()
 		                       .verifyWith(Keys.hmacShaKeyFor(issuerSecret.getBytes(StandardCharsets.UTF_8)))
+		                       .clock(() -> Date.from(clock.instant()))
 		                       .clockSkewSeconds(policy.clockSkew().toSeconds())
 		                       .build();
 
@@ -26,7 +37,7 @@ final class HmacTokenVerifierFactory
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								HmacVerificationRequestAdapter.create(policy))));
+								HmacVerificationRequestAdapter.create(policy, clock))));
 	}
 
 	private HmacTokenVerifierFactory()

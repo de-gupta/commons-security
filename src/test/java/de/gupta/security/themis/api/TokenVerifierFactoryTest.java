@@ -7,8 +7,10 @@ import de.gupta.security.themis.domain.model.VerificationResult;
 import de.gupta.security.themis.domain.model.VerificationSuccess;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -17,14 +19,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 final class TokenVerifierFactoryTest
 {
+	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-04-09T12:00:00Z"), ZoneOffset.UTC);
+
 	@Test
 	void shouldVerifyValidToken()
 	{
 		final TokenVerifier verifier = TokenVerifierFactory.hmac(
 				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty())
 				                       .withRolesClaimName("user_roles"),
-				TestJwtTokens.SECRET);
-		final String token = TestJwtTokens.tokenWithRoles("user@example.com", Instant.now().plusSeconds(3600),
+				TestJwtTokens.SECRET,
+				CLOCK);
+		final String token = TestJwtTokens.tokenWithRoles("user@example.com", CLOCK.instant().plusSeconds(3600),
 				List.of("ROLE_USER"));
 
 		final VerificationResult result = verifier.verify(token);
@@ -39,8 +44,8 @@ final class TokenVerifierFactoryTest
 	void shouldRejectTokenWithWrongSignature()
 	{
 		final TokenVerifier verifier =
-				TokenVerifierFactory.hmac(TokenVerificationPolicy.create(), TestJwtTokens.SECRET);
-		final String token = TestJwtTokens.tokenWithSecret("user@example.com", Instant.now().plusSeconds(3600),
+				TokenVerifierFactory.hmac(TokenVerificationPolicy.create(), TestJwtTokens.SECRET, CLOCK);
+		final String token = TestJwtTokens.tokenWithSecret("user@example.com", CLOCK.instant().plusSeconds(3600),
 				List.of("ROLE_USER"), "fedcba9876543210fedcba9876543210");
 
 		final VerificationResult result = verifier.verify(token);
@@ -54,8 +59,9 @@ final class TokenVerifierFactoryTest
 	{
 		final TokenVerifier verifier = TokenVerifierFactory.hmac(
 				TokenVerificationPolicy.of(Duration.ZERO, true),
-				TestJwtTokens.SECRET);
-		final String token = TestJwtTokens.tokenWithoutSubject(Instant.now().plusSeconds(3600));
+				TestJwtTokens.SECRET,
+				CLOCK);
+		final String token = TestJwtTokens.tokenWithoutSubject(CLOCK.instant().plusSeconds(3600));
 
 		final VerificationResult result = verifier.verify(token);
 
@@ -69,8 +75,9 @@ final class TokenVerifierFactoryTest
 		final TokenVerifier verifier = TokenVerifierFactory.rsa(
 				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty())
 				                       .withRolesClaimName("user_roles"),
-				TestJwtTokens.rsaPublicKey());
-		final String token = TestJwtTokens.rsaTokenWithRoles("rsa-user@example.com", Instant.now().plusSeconds(3600),
+				TestJwtTokens.rsaPublicKey(),
+				CLOCK);
+		final String token = TestJwtTokens.rsaTokenWithRoles("rsa-user@example.com", CLOCK.instant().plusSeconds(3600),
 				List.of("ROLE_RSA"));
 
 		final VerificationResult result = verifier.verify(token);
@@ -87,8 +94,9 @@ final class TokenVerifierFactoryTest
 		final TokenVerifier verifier = TokenVerifierFactory.ec(
 				TokenVerificationPolicy.of(Duration.ZERO, true, Set.of(), Optional.empty())
 				                       .withRolesClaimName("user_roles"),
-				TestJwtTokens.ecPublicKey());
-		final String token = TestJwtTokens.ecTokenWithRoles("ec-user@example.com", Instant.now().plusSeconds(3600),
+				TestJwtTokens.ecPublicKey(),
+				CLOCK);
+		final String token = TestJwtTokens.ecTokenWithRoles("ec-user@example.com", CLOCK.instant().plusSeconds(3600),
 				List.of("ROLE_EC"));
 
 		final VerificationResult result = verifier.verify(token);

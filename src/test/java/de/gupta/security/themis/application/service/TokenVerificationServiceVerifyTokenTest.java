@@ -12,8 +12,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -23,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 final class TokenVerificationServiceVerifyTokenTest
 {
+	private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-04-09T12:00:00Z"), ZoneOffset.UTC);
 	private static final String EXPECTED_ISSUER = "https://issuer.example";
 	private static final String EXPECTED_AUDIENCE = "themis-service";
 
@@ -31,6 +34,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		return TokenVerificationServiceFactory.create(
 				Jwts.parser()
 				    .verifyWith(Keys.hmacShaKeyFor(parserSecret.getBytes(StandardCharsets.UTF_8)))
+				    .clock(() -> Date.from(CLOCK.instant()))
 				    .build());
 	}
 
@@ -61,7 +65,7 @@ final class TokenVerificationServiceVerifyTokenTest
 	{
 		return Jwts.builder()
 		           .subject(subject)
-		           .expiration(Date.from(Instant.now().plusSeconds(3600)))
+		           .expiration(Date.from(CLOCK.instant().plusSeconds(3600)))
 		           .compact();
 	}
 
@@ -82,7 +86,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		{
 			return new SuccessCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, policy, Instant.now())),
+							VerificationContext.of(VerificationKeyKind.HMAC, policy, CLOCK.instant())),
 					parserSecret,
 					assertion);
 		}
@@ -105,7 +109,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		{
 			return new FailureCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, policy, Instant.now())),
+							VerificationContext.of(VerificationKeyKind.HMAC, policy, CLOCK.instant())),
 					parserSecret,
 					expectedReason);
 		}
@@ -147,7 +151,8 @@ final class TokenVerificationServiceVerifyTokenTest
 			return Stream.of(
 								 SuccessCase.of(
 										 "minimal valid token",
-										 TestJwtTokens.tokenWithRoles("user@example.com", Instant.now().plusSeconds(3600),
+										 TestJwtTokens.tokenWithRoles("user@example.com",
+												 CLOCK.instant().plusSeconds(3600),
 												 List.of("ROLE_USER")),
 										 defaultPolicy(),
 										 TestJwtTokens.SECRET,
@@ -160,7 +165,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 "valid token with issuer and audience",
 										 signedToken(TokenSpec.of(
 												 "issuer-audience@example.com",
-												 Instant.now().plusSeconds(3600),
+												 CLOCK.instant().plusSeconds(3600),
 												 Optional.empty(),
 												 Optional.of(EXPECTED_ISSUER),
 												 Set.of(EXPECTED_AUDIENCE),
@@ -177,7 +182,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 }),
 								 SuccessCase.of(
 										 "valid token without subject requirement",
-										 TestJwtTokens.tokenWithoutSubject(Instant.now().plusSeconds(3600)),
+										 TestJwtTokens.tokenWithoutSubject(CLOCK.instant().plusSeconds(3600)),
 										 TokenVerificationPolicy.of(Duration.ZERO, false),
 										 TestJwtTokens.SECRET,
 										 token -> assertThat(token.subject()).isNull()))
@@ -204,7 +209,8 @@ final class TokenVerificationServiceVerifyTokenTest
 			return Stream.of(
 								 FailureCase.of(
 										 "expired token",
-										 TestJwtTokens.tokenWithRoles("expired@example.com", Instant.now().minusSeconds(60),
+										 TestJwtTokens.tokenWithRoles("expired@example.com",
+												 CLOCK.instant().minusSeconds(60),
 												 List.of("ROLE_USER")),
 										 defaultPolicy(),
 										 TestJwtTokens.SECRET,
@@ -213,8 +219,8 @@ final class TokenVerificationServiceVerifyTokenTest
 										 "not yet valid token",
 										 signedToken(TokenSpec.of(
 												 "future@example.com",
-												 Instant.now().plusSeconds(3600),
-												 Optional.of(Instant.now().plusSeconds(300)),
+												 CLOCK.instant().plusSeconds(3600),
+												 Optional.of(CLOCK.instant().plusSeconds(300)),
 												 Optional.empty(),
 												 Set.of(),
 												 Map.of("user_roles", List.of("ROLE_USER")),
@@ -245,7 +251,7 @@ final class TokenVerificationServiceVerifyTokenTest
 			return Stream.of(
 								 FailureCase.of(
 										 "missing subject when subject required",
-										 TestJwtTokens.tokenWithoutSubject(Instant.now().plusSeconds(3600)),
+										 TestJwtTokens.tokenWithoutSubject(CLOCK.instant().plusSeconds(3600)),
 										 defaultPolicy(),
 										 TestJwtTokens.SECRET,
 										 VerificationFailureReason.MISSING_SUBJECT),
@@ -253,7 +259,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 "issuer mismatch",
 										 signedToken(TokenSpec.of(
 												 "issuer-mismatch@example.com",
-												 Instant.now().plusSeconds(3600),
+												 CLOCK.instant().plusSeconds(3600),
 												 Optional.empty(),
 												 Optional.of("https://another-issuer.example"),
 												 Set.of(),
@@ -266,7 +272,7 @@ final class TokenVerificationServiceVerifyTokenTest
 										 "audience mismatch",
 										 signedToken(TokenSpec.of(
 												 "audience-mismatch@example.com",
-												 Instant.now().plusSeconds(3600),
+												 CLOCK.instant().plusSeconds(3600),
 												 Optional.empty(),
 												 Optional.empty(),
 												 Set.of("some-other-audience"),
@@ -299,7 +305,8 @@ final class TokenVerificationServiceVerifyTokenTest
 			return Stream.of(
 								 FailureCase.of(
 										 "wrong signature",
-										 TestJwtTokens.tokenWithSecret("signature@example.com", Instant.now().plusSeconds(3600),
+										 TestJwtTokens.tokenWithSecret("signature@example.com",
+												 CLOCK.instant().plusSeconds(3600),
 												 List.of("ROLE_USER"), "fedcba9876543210fedcba9876543210"),
 										 defaultPolicy(),
 										 TestJwtTokens.SECRET,
