@@ -112,6 +112,9 @@ final class TokenUtilityTest
 
 		private Stream<Arguments> audienceCases()
 		{
+			final Map<String, Object> nullAudienceClaim = new HashMap<>();
+			nullAudienceClaim.put("aud", null);
+
 			return Stream.of(
 								 AudienceCase.of("single string audience", validatedClaims(Map.of("aud", "service-a")),
 										 Set.of("service-a")),
@@ -123,6 +126,7 @@ final class TokenUtilityTest
 										 rawClaims(Map.of("aud", List.of(" service-a ", 7, "   ", "service-b"))),
 										 Set.of("service-a", "service-b")),
 								 AudienceCase.of("unsupported audience type", rawClaims(Map.of("aud", 42)), Set.of()),
+								 AudienceCase.of("explicit null audience", rawClaims(nullAudienceClaim), Set.of()),
 								 AudienceCase.of("missing audience", validatedClaims(Map.of()), Set.of()))
 			             .map(Arguments::of);
 		}

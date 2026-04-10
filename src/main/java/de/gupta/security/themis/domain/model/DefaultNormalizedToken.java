@@ -1,6 +1,8 @@
 package de.gupta.security.themis.domain.model;
 
+import de.gupta.aletheia.collection.cascade.Cascade;
 import de.gupta.aletheia.functional.Unfolding;
+import de.gupta.commons.utility.string.StringSanitizationUtility;
 import de.gupta.security.themis.utility.TokenUtility;
 import io.jsonwebtoken.Claims;
 
@@ -11,11 +13,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public record DefaultNormalizedToken(String rawToken, Claims claims, String rolesClaimName,
-                                     String versionClaimName) implements NormalizedToken
+record DefaultNormalizedToken(String rawToken, Claims claims, String rolesClaimName,
+                              String versionClaimName) implements NormalizedToken
 {
-	public static DefaultNormalizedToken of(final String rawToken, final Claims claims, final String rolesClaimName,
-	                                        final String versionClaimName)
+	static DefaultNormalizedToken of(final String rawToken, final Claims claims, final String rolesClaimName,
+	                                 final String versionClaimName)
 	{
 		return new DefaultNormalizedToken(rawToken, claims, rolesClaimName, versionClaimName);
 	}
@@ -33,13 +35,16 @@ public record DefaultNormalizedToken(String rawToken, Claims claims, String role
 		                .discern(Collection.class::isInstance)
 		                .metamorphose(Collection.class::cast)
 		                .metamorphose(this::extractRoles)
-		                .ordain(Set.of());
+		                .infuse(Set.of());
 	}
 
 	@Override
 	public Optional<String> issuer()
 	{
-		return Optional.ofNullable(claims.getIssuer()).map(String::trim).filter(value -> !value.isEmpty());
+		return Unfolding.beckon(claims.getIssuer())
+		                .metamorphose(String::trim)
+		                .discern(StringSanitizationUtility::isNotBlank)
+		                .optional();
 	}
 
 	@Override
@@ -77,20 +82,21 @@ public record DefaultNormalizedToken(String rawToken, Claims claims, String role
 	@Override
 	public Optional<String> property(final String name)
 	{
-		return Optional.ofNullable(claims.get(name))
-		               .filter(String.class::isInstance)
-		               .map(String.class::cast)
-		               .map(String::trim)
-		               .filter(value -> !value.isEmpty());
+		return Unfolding.beckon(claims.get(name))
+		                .discern(String.class::isInstance)
+		                .metamorphose(String.class::cast)
+		                .metamorphose(String::trim)
+		                .discern(StringSanitizationUtility::isNotBlank)
+		                .optional();
 	}
 
 	private Set<String> extractRoles(final Collection<?> values)
 	{
-		return values.stream()
-		             .filter(String.class::isInstance)
-		             .map(String.class::cast)
-		             .map(String::trim)
-		             .filter(value -> !value.isEmpty())
-		             .collect(Collectors.toUnmodifiableSet());
+		return Cascade.beckon(values)
+		              .discern(String.class::isInstance)
+		              .metamorphose(String.class::cast)
+		              .metamorphose(String::trim)
+		              .discern(StringSanitizationUtility::isNotBlank)
+		              .coronate(s -> s.collect(Collectors.toUnmodifiableSet()), Set::of);
 	}
 }

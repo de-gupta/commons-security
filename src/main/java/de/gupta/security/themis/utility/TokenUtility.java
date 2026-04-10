@@ -1,30 +1,34 @@
 package de.gupta.security.themis.utility;
 
+import de.gupta.aletheia.collection.cascade.Cascade;
+import de.gupta.commons.utility.string.StringSanitizationUtility;
 import io.jsonwebtoken.Claims;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class TokenUtility
 {
 	public static Set<String> audiencesOf(final Claims claims)
 	{
-		final Object rawAudience = claims.get("aud");
-		if (rawAudience instanceof String audience)
+		return Cascade.beckon(audienceStreamOf(claims.get(Claims.AUDIENCE)))
+		              .discern(String.class::isInstance)
+		              .metamorphose(String.class::cast)
+		              .metamorphose(String::trim)
+		              .discern(StringSanitizationUtility::isNotBlank)
+		              .coronate(s -> s.collect(Collectors.toUnmodifiableSet()), Set::of);
+	}
+
+	private static Stream<?> audienceStreamOf(final Object rawAudience)
+	{
+		return switch (rawAudience)
 		{
-			return audience.isBlank() ? Set.of() : Set.of(audience);
-		}
-		if (rawAudience instanceof Collection<?> values)
-		{
-			return values.stream()
-			             .filter(String.class::isInstance)
-			             .map(String.class::cast)
-			             .map(String::trim)
-			             .filter(value -> !value.isEmpty())
-			             .collect(Collectors.toUnmodifiableSet());
-		}
-		return Set.of();
+			case String audience -> Stream.of(audience);
+			case Collection<?> audiences -> audiences.stream();
+			case null, default -> Stream.empty();
+		};
 	}
 
 	private TokenUtility()

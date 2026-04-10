@@ -43,8 +43,8 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 
 		return validateClaims(claims, policy)
 				.<VerificationResult>metamorphose(Function.identity())
-				.ordain(VerificationSuccess.of(
-						DefaultNormalizedToken.of(request.token(), claims,
+				.infuse(VerificationSuccess.of(
+						NormalizedTokenFactory.of(request.token(), claims,
 								configuration.rolesClaimName(),
 								configuration.versionClaimName())));
 	}
