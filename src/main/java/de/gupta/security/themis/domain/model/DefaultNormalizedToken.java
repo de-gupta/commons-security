@@ -49,6 +49,14 @@ public record DefaultNormalizedToken(String rawToken, Claims claims, String role
 	}
 
 	@Override
+	public Optional<Number> version()
+	{
+		return Optional.ofNullable(claims.get(versionClaimName))
+		               .filter(Number.class::isInstance)
+		               .map(Number.class::cast);
+	}
+
+	@Override
 	public Optional<Instant> issuedAt()
 	{
 		return Optional.ofNullable(claims.getIssuedAt()).map(Date::toInstant);
@@ -67,47 +75,13 @@ public record DefaultNormalizedToken(String rawToken, Claims claims, String role
 	}
 
 	@Override
-	public Optional<Number> version()
-	{
-		return Optional.ofNullable(claims.get(versionClaimName))
-		               .filter(Number.class::isInstance)
-		               .map(Number.class::cast);
-	}
-
-	@Override
-	public Optional<String> stringClaim(final String name)
+	public Optional<String> property(final String name)
 	{
 		return Optional.ofNullable(claims.get(name))
 		               .filter(String.class::isInstance)
 		               .map(String.class::cast)
 		               .map(String::trim)
 		               .filter(value -> !value.isEmpty());
-	}
-
-	@Override
-	public Set<String> stringListClaim(final String name)
-	{
-		final Object rawClaim = claims.get(name);
-		if (!(rawClaim instanceof Collection<?> values))
-		{
-			return Set.of();
-		}
-
-		return values.stream()
-		             .filter(String.class::isInstance)
-		             .map(String.class::cast)
-		             .map(String::trim)
-		             .filter(value -> !value.isEmpty())
-		             .collect(Collectors.toUnmodifiableSet());
-	}
-
-	@Override
-	public Optional<Long> longClaim(final String name)
-	{
-		return Optional.ofNullable(claims.get(name))
-		               .filter(Number.class::isInstance)
-		               .map(Number.class::cast)
-		               .map(Number::longValue);
 	}
 
 	private Set<String> extractRoles(final Collection<?> values)

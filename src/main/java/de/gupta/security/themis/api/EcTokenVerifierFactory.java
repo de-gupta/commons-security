@@ -1,6 +1,6 @@
 package de.gupta.security.themis.api;
 
-import de.gupta.security.themis.adapter.EcVerificationRequestAdapter;
+import de.gupta.security.themis.adapter.ConfiguredVerificationRequestAdapter;
 import de.gupta.security.themis.adapter.TokenVerificationServiceFacadeFactory;
 import de.gupta.security.themis.application.service.TokenVerificationServiceFactory;
 import de.gupta.security.themis.controller.TokenVerificationControllerFactory;
@@ -32,11 +32,11 @@ final class EcTokenVerifierFactory
 		                       .clockSkewSeconds(configuration.policy().clockSkew().toSeconds())
 		                       .build();
 
-		return EcTokenVerifier.create(
+		return ConfiguredTokenVerifier.create(
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								EcVerificationRequestAdapter.create(configuration, clock))));
+								ConfiguredVerificationRequestAdapter.create(configuration, clock))));
 	}
 
 	private EcTokenVerifierFactory()

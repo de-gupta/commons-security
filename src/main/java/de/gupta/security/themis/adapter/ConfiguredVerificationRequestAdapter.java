@@ -3,12 +3,11 @@ package de.gupta.security.themis.adapter;
 import de.gupta.security.themis.api.TokenVerificationConfiguration;
 import de.gupta.security.themis.application.service.VerificationContext;
 import de.gupta.security.themis.application.service.VerificationRequest;
-import de.gupta.security.themis.domain.model.VerificationKeyKind;
 
 import java.time.Clock;
 import java.util.Objects;
 
-public final class EcVerificationRequestAdapter implements VerificationRequestAdapter
+public final class ConfiguredVerificationRequestAdapter implements VerificationRequestAdapter
 {
 	private final TokenVerificationConfiguration configuration;
 	private final Clock clock;
@@ -23,18 +22,16 @@ public final class EcVerificationRequestAdapter implements VerificationRequestAd
 	{
 		Objects.requireNonNull(configuration, "configuration must not be null");
 		Objects.requireNonNull(clock, "clock must not be null");
-		return new EcVerificationRequestAdapter(configuration, clock);
+		return new ConfiguredVerificationRequestAdapter(configuration, clock);
 	}
 
 	@Override
 	public VerificationRequest adapt(final String token)
 	{
-		return VerificationRequest.of(
-				token,
-				VerificationContext.of(VerificationKeyKind.EC, configuration, clock.instant()));
+		return VerificationRequest.of(token, VerificationContext.of(configuration, clock.instant()));
 	}
 
-	private EcVerificationRequestAdapter(final TokenVerificationConfiguration configuration, final Clock clock)
+	private ConfiguredVerificationRequestAdapter(final TokenVerificationConfiguration configuration, final Clock clock)
 	{
 		this.configuration = configuration;
 		this.clock = clock;

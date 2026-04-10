@@ -1,6 +1,6 @@
 package de.gupta.security.themis.api;
 
-import de.gupta.security.themis.adapter.RsaVerificationRequestAdapter;
+import de.gupta.security.themis.adapter.ConfiguredVerificationRequestAdapter;
 import de.gupta.security.themis.adapter.TokenVerificationServiceFacadeFactory;
 import de.gupta.security.themis.application.service.TokenVerificationServiceFactory;
 import de.gupta.security.themis.controller.TokenVerificationControllerFactory;
@@ -32,11 +32,11 @@ final class RsaTokenVerifierFactory
 		                       .clockSkewSeconds(configuration.policy().clockSkew().toSeconds())
 		                       .build();
 
-		return RsaTokenVerifier.create(
+		return ConfiguredTokenVerifier.create(
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								RsaVerificationRequestAdapter.create(configuration, clock))));
+								ConfiguredVerificationRequestAdapter.create(configuration, clock))));
 	}
 
 	private RsaTokenVerifierFactory()

@@ -1,6 +1,6 @@
 package de.gupta.security.themis.api;
 
-import de.gupta.security.themis.adapter.HmacVerificationRequestAdapter;
+import de.gupta.security.themis.adapter.ConfiguredVerificationRequestAdapter;
 import de.gupta.security.themis.adapter.TokenVerificationServiceFacadeFactory;
 import de.gupta.security.themis.application.service.TokenVerificationServiceFactory;
 import de.gupta.security.themis.controller.TokenVerificationControllerFactory;
@@ -33,11 +33,11 @@ final class HmacTokenVerifierFactory
 		                       .clockSkewSeconds(configuration.policy().clockSkew().toSeconds())
 		                       .build();
 
-		return HmacTokenVerifier.create(
+		return ConfiguredTokenVerifier.create(
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								HmacVerificationRequestAdapter.create(configuration, clock))));
+								ConfiguredVerificationRequestAdapter.create(configuration, clock))));
 	}
 
 	private HmacTokenVerifierFactory()

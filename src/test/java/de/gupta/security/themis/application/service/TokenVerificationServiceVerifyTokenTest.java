@@ -89,7 +89,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		{
 			return new SuccessCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, configuration, CLOCK.instant())),
+							VerificationContext.of(configuration, CLOCK.instant())),
 					parserSecret,
 					assertion);
 		}
@@ -121,7 +121,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		{
 			return new FailureCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, configuration, CLOCK.instant())),
+							VerificationContext.of(configuration, CLOCK.instant())),
 					parserSecret,
 					expectedReason);
 		}

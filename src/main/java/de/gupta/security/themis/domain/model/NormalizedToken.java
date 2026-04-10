@@ -24,12 +24,5 @@ public sealed interface NormalizedToken permits DefaultNormalizedToken
 
 	Optional<Instant> notBefore();
 
-	@Deprecated(since = "2.1.0", forRemoval = true)
-	Optional<String> stringClaim(String name);
-
-	@Deprecated(since = "2.1.0", forRemoval = true)
-	Set<String> stringListClaim(String name);
-
-	@Deprecated(since = "2.1.0", forRemoval = true)
-	Optional<Long> longClaim(String name);
+	Optional<String> property(final String name);
 }
