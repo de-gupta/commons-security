@@ -16,7 +16,7 @@
     <url>https://github.com/de-gupta/security.themis.git</url>
 
     <properties>
-        <security.dependencies.bom.version>0.2.3-SNAPSHOT</security.dependencies.bom.version>
+        <security.dependencies.bom.version>0.2.3</security.dependencies.bom.version>
     </properties>
 
     <dependencyManagement>
