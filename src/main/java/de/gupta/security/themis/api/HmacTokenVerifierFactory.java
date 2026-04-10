@@ -14,30 +14,30 @@ import java.util.Objects;
 
 final class HmacTokenVerifierFactory
 {
-	public static TokenVerifier create(final TokenVerificationPolicy policy, final String issuerSecret)
+	public static TokenVerifier create(final TokenVerificationConfiguration configuration, final String issuerSecret)
 	{
-		return create(policy, issuerSecret, Clock.systemUTC());
+		return create(configuration, issuerSecret, Clock.systemUTC());
 	}
 
-	public static TokenVerifier create(final TokenVerificationPolicy policy,
+	public static TokenVerifier create(final TokenVerificationConfiguration configuration,
 	                                   final String issuerSecret,
 	                                   final Clock clock)
 	{
-		Objects.requireNonNull(policy, "policy must not be null");
+		Objects.requireNonNull(configuration, "configuration must not be null");
 		Objects.requireNonNull(issuerSecret, "issuerSecret must not be null");
 		Objects.requireNonNull(clock, "clock must not be null");
 
 		final var parser = Jwts.parser()
 		                       .verifyWith(Keys.hmacShaKeyFor(issuerSecret.getBytes(StandardCharsets.UTF_8)))
 		                       .clock(() -> Date.from(clock.instant()))
-		                       .clockSkewSeconds(policy.clockSkew().toSeconds())
+		                       .clockSkewSeconds(configuration.policy().clockSkew().toSeconds())
 		                       .build();
 
 		return HmacTokenVerifier.create(
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								HmacVerificationRequestAdapter.create(policy, clock))));
+								HmacVerificationRequestAdapter.create(configuration, clock))));
 	}
 
 	private HmacTokenVerifierFactory()

@@ -13,30 +13,30 @@ import java.util.Objects;
 
 final class RsaTokenVerifierFactory
 {
-	static TokenVerifier create(final TokenVerificationPolicy policy, final RSAPublicKey issuerPublicKey)
+	static TokenVerifier create(final TokenVerificationConfiguration configuration, final RSAPublicKey issuerPublicKey)
 	{
-		return create(policy, issuerPublicKey, Clock.systemUTC());
+		return create(configuration, issuerPublicKey, Clock.systemUTC());
 	}
 
-	static TokenVerifier create(final TokenVerificationPolicy policy,
+	static TokenVerifier create(final TokenVerificationConfiguration configuration,
 	                            final RSAPublicKey issuerPublicKey,
 	                            final Clock clock)
 	{
-		Objects.requireNonNull(policy, "policy must not be null");
+		Objects.requireNonNull(configuration, "configuration must not be null");
 		Objects.requireNonNull(issuerPublicKey, "issuerPublicKey must not be null");
 		Objects.requireNonNull(clock, "clock must not be null");
 
 		final var parser = Jwts.parser()
 		                       .verifyWith(issuerPublicKey)
 		                       .clock(() -> Date.from(clock.instant()))
-		                       .clockSkewSeconds(policy.clockSkew().toSeconds())
+		                       .clockSkewSeconds(configuration.policy().clockSkew().toSeconds())
 		                       .build();
 
 		return RsaTokenVerifier.create(
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								RsaVerificationRequestAdapter.create(policy, clock))));
+								RsaVerificationRequestAdapter.create(configuration, clock))));
 	}
 
 	private RsaTokenVerifierFactory()

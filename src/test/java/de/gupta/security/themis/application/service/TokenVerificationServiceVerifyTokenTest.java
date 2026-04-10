@@ -1,6 +1,7 @@
 package de.gupta.security.themis.application.service;
 
 import de.gupta.security.themis.TestJwtTokens;
+import de.gupta.security.themis.api.TokenVerificationConfiguration;
 import de.gupta.security.themis.api.TokenVerificationPolicy;
 import de.gupta.security.themis.domain.model.*;
 import io.jsonwebtoken.Jwts;
@@ -38,9 +39,11 @@ final class TokenVerificationServiceVerifyTokenTest
 				    .build());
 	}
 
-	private TokenVerificationPolicy defaultPolicy()
+	private TokenVerificationConfiguration defaultPolicy()
 	{
-		return TokenVerificationPolicy.of(Duration.ZERO, true).withRolesClaimName("user_roles");
+		return TokenVerificationConfiguration.of(TokenVerificationPolicy.of(Duration.ZERO, true),
+				"user_roles",
+				TokenVerificationConfiguration.DEFAULT_VERSION_CLAIM_NAME);
 	}
 
 	private String signedToken(final TokenSpec spec)
@@ -80,15 +83,24 @@ final class TokenVerificationServiceVerifyTokenTest
 
 		private static SuccessCase of(final String description,
 		                              final String token,
-		                              final TokenVerificationPolicy policy,
+		                              final TokenVerificationConfiguration configuration,
 		                              final String parserSecret,
 		                              final Consumer<NormalizedToken> assertion)
 		{
 			return new SuccessCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, policy, CLOCK.instant())),
+							VerificationContext.of(VerificationKeyKind.HMAC, configuration, CLOCK.instant())),
 					parserSecret,
 					assertion);
+		}
+
+		private static SuccessCase of(final String description,
+		                              final String token,
+		                              final TokenVerificationPolicy policy,
+		                              final String parserSecret,
+		                              final Consumer<NormalizedToken> assertion)
+		{
+			return of(description, token, TokenVerificationConfiguration.of(policy), parserSecret, assertion);
 		}
 	}
 
@@ -103,15 +115,24 @@ final class TokenVerificationServiceVerifyTokenTest
 
 		private static FailureCase of(final String description,
 		                              final String token,
-		                              final TokenVerificationPolicy policy,
+		                              final TokenVerificationConfiguration configuration,
 		                              final String parserSecret,
 		                              final VerificationFailureReason expectedReason)
 		{
 			return new FailureCase(description,
 					VerificationRequest.of(token,
-							VerificationContext.of(VerificationKeyKind.HMAC, policy, CLOCK.instant())),
+							VerificationContext.of(VerificationKeyKind.HMAC, configuration, CLOCK.instant())),
 					parserSecret,
 					expectedReason);
+		}
+
+		private static FailureCase of(final String description,
+		                              final String token,
+		                              final TokenVerificationPolicy policy,
+		                              final String parserSecret,
+		                              final VerificationFailureReason expectedReason)
+		{
+			return of(description, token, TokenVerificationConfiguration.of(policy), parserSecret, expectedReason);
 		}
 	}
 

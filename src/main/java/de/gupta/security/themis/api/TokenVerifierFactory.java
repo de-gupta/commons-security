@@ -6,40 +6,42 @@ import java.time.Clock;
 
 public final class TokenVerifierFactory
 {
-	public static TokenVerifier hmac(final TokenVerificationPolicy policy, final String issuerSecret)
+	public static TokenVerifier hmac(final TokenVerificationConfiguration configuration, final String issuerSecret)
 	{
-		return hmac(policy, issuerSecret, Clock.systemUTC());
+		return hmac(configuration, issuerSecret, Clock.systemUTC());
 	}
 
-	public static TokenVerifier hmac(final TokenVerificationPolicy policy,
+	public static TokenVerifier hmac(final TokenVerificationConfiguration configuration,
 	                                 final String issuerSecret,
 	                                 final Clock clock)
 	{
-		return HmacTokenVerifierFactory.create(policy, issuerSecret, clock);
+		return HmacTokenVerifierFactory.create(configuration, issuerSecret, clock);
 	}
 
-	public static TokenVerifier rsa(final TokenVerificationPolicy policy, final RSAPublicKey issuerPublicKey)
+	public static TokenVerifier rsa(final TokenVerificationConfiguration configuration,
+	                                final RSAPublicKey issuerPublicKey)
 	{
-		return rsa(policy, issuerPublicKey, Clock.systemUTC());
+		return rsa(configuration, issuerPublicKey, Clock.systemUTC());
 	}
 
-	public static TokenVerifier rsa(final TokenVerificationPolicy policy,
+	public static TokenVerifier rsa(final TokenVerificationConfiguration configuration,
 	                                final RSAPublicKey issuerPublicKey,
 	                                final Clock clock)
 	{
-		return RsaTokenVerifierFactory.create(policy, issuerPublicKey, clock);
+		return RsaTokenVerifierFactory.create(configuration, issuerPublicKey, clock);
 	}
 
-	public static TokenVerifier ec(final TokenVerificationPolicy policy, final ECPublicKey issuerPublicKey)
+	public static TokenVerifier ec(final TokenVerificationConfiguration configuration,
+	                               final ECPublicKey issuerPublicKey)
 	{
-		return ec(policy, issuerPublicKey, Clock.systemUTC());
+		return ec(configuration, issuerPublicKey, Clock.systemUTC());
 	}
 
-	public static TokenVerifier ec(final TokenVerificationPolicy policy,
+	public static TokenVerifier ec(final TokenVerificationConfiguration configuration,
 	                               final ECPublicKey issuerPublicKey,
 	                               final Clock clock)
 	{
-		return EcTokenVerifierFactory.create(policy, issuerPublicKey, clock);
+		return EcTokenVerifierFactory.create(configuration, issuerPublicKey, clock);
 	}
 
 	private TokenVerifierFactory()

@@ -1,6 +1,6 @@
 package de.gupta.security.themis.adapter;
 
-import de.gupta.security.themis.api.TokenVerificationPolicy;
+import de.gupta.security.themis.api.TokenVerificationConfiguration;
 import de.gupta.security.themis.application.service.VerificationContext;
 import de.gupta.security.themis.application.service.VerificationRequest;
 import de.gupta.security.themis.domain.model.VerificationKeyKind;
@@ -10,19 +10,20 @@ import java.util.Objects;
 
 public final class RsaVerificationRequestAdapter implements VerificationRequestAdapter
 {
-	private final TokenVerificationPolicy policy;
+	private final TokenVerificationConfiguration configuration;
 	private final Clock clock;
 
-	public static VerificationRequestAdapter create(final TokenVerificationPolicy policy)
+	public static VerificationRequestAdapter create(final TokenVerificationConfiguration configuration)
 	{
-		return create(policy, Clock.systemUTC());
+		return create(configuration, Clock.systemUTC());
 	}
 
-	public static VerificationRequestAdapter create(final TokenVerificationPolicy policy, final Clock clock)
+	public static VerificationRequestAdapter create(final TokenVerificationConfiguration configuration,
+	                                                final Clock clock)
 	{
-		Objects.requireNonNull(policy, "policy must not be null");
+		Objects.requireNonNull(configuration, "configuration must not be null");
 		Objects.requireNonNull(clock, "clock must not be null");
-		return new RsaVerificationRequestAdapter(policy, clock);
+		return new RsaVerificationRequestAdapter(configuration, clock);
 	}
 
 	@Override
@@ -30,12 +31,12 @@ public final class RsaVerificationRequestAdapter implements VerificationRequestA
 	{
 		return VerificationRequest.of(
 				token,
-				VerificationContext.of(VerificationKeyKind.RSA, policy, clock.instant()));
+				VerificationContext.of(VerificationKeyKind.RSA, configuration, clock.instant()));
 	}
 
-	private RsaVerificationRequestAdapter(final TokenVerificationPolicy policy, final Clock clock)
+	private RsaVerificationRequestAdapter(final TokenVerificationConfiguration configuration, final Clock clock)
 	{
-		this.policy = policy;
+		this.configuration = configuration;
 		this.clock = clock;
 	}
 }

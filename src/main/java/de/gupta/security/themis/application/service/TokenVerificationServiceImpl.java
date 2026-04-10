@@ -4,6 +4,7 @@ import de.gupta.aletheia.functional.Unfolding;
 import de.gupta.aletheia.trials.Fallible;
 import de.gupta.aletheia.trials.Portent;
 import de.gupta.commons.utility.string.StringSanitizationUtility;
+import de.gupta.security.themis.api.TokenVerificationConfiguration;
 import de.gupta.security.themis.api.TokenVerificationPolicy;
 import de.gupta.security.themis.domain.model.*;
 import de.gupta.security.themis.utility.TokenUtility;
@@ -35,15 +36,17 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 
 	private VerificationResult verifySignedToken(final VerificationRequest request)
 	{
-		final TokenVerificationPolicy policy = request.context().policy();
+		final TokenVerificationConfiguration configuration = request.context().configuration();
+		final TokenVerificationPolicy policy = configuration.policy();
 		final Jws<Claims> jws = jwtParser.parseSignedClaims(request.token());
 		final Claims claims = jws.getPayload();
 
 		return validateClaims(claims, policy)
 				.<VerificationResult>metamorphose(Function.identity())
 				.ordain(VerificationSuccess.of(
-						DefaultNormalizedToken.of(request.token(), claims, policy.rolesClaimName(),
-								policy.versionClaimName())));
+						DefaultNormalizedToken.of(request.token(), claims,
+								configuration.rolesClaimName(),
+								configuration.versionClaimName())));
 	}
 
 	private List<Portent<VerificationResult>> exceptionally()
