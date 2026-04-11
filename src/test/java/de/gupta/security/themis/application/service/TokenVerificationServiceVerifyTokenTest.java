@@ -72,7 +72,8 @@ final class TokenVerificationServiceVerifyTokenTest
 		           .compact();
 	}
 
-	private record SuccessCase(String description, VerificationRequest request, String parserSecret,
+	private record SuccessCase(String description, String token, TokenVerificationConfiguration configuration,
+	                           String parserSecret,
 	                           Consumer<NormalizedToken> assertion)
 	{
 		@Override
@@ -87,10 +88,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		                              final String parserSecret,
 		                              final Consumer<NormalizedToken> assertion)
 		{
-			return new SuccessCase(description,
-					VerificationRequest.of(token, configuration),
-					parserSecret,
-					assertion);
+			return new SuccessCase(description, token, configuration, parserSecret, assertion);
 		}
 
 		private static SuccessCase of(final String description,
@@ -103,7 +101,8 @@ final class TokenVerificationServiceVerifyTokenTest
 		}
 	}
 
-	private record FailureCase(String description, VerificationRequest request, String parserSecret,
+	private record FailureCase(String description, String token, TokenVerificationConfiguration configuration,
+	                           String parserSecret,
 	                           VerificationFailureReason expectedReason)
 	{
 		@Override
@@ -118,10 +117,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		                              final String parserSecret,
 		                              final VerificationFailureReason expectedReason)
 		{
-			return new FailureCase(description,
-					VerificationRequest.of(token, configuration),
-					parserSecret,
-					expectedReason);
+			return new FailureCase(description, token, configuration, parserSecret, expectedReason);
 		}
 
 		private static FailureCase of(final String description,
@@ -158,7 +154,8 @@ final class TokenVerificationServiceVerifyTokenTest
 		@MethodSource("successCases")
 		void shouldReturnVerificationSuccess(final SuccessCase testCase)
 		{
-			final VerificationResult result = service(testCase.parserSecret()).verifyToken(testCase.request());
+			final VerificationResult result = service(testCase.parserSecret())
+					.verifyToken(testCase.token(), testCase.configuration());
 
 			assertThat(result).isInstanceOf(VerificationSuccess.class);
 			final NormalizedToken token = ((VerificationSuccess) result).token();
@@ -217,7 +214,8 @@ final class TokenVerificationServiceVerifyTokenTest
 		@MethodSource("temporalFailureCases")
 		void shouldReturnFailureForTemporalValidation(final FailureCase testCase)
 		{
-			final VerificationResult result = service(testCase.parserSecret()).verifyToken(testCase.request());
+			final VerificationResult result = service(testCase.parserSecret())
+					.verifyToken(testCase.token(), testCase.configuration());
 
 			assertThat(result).isInstanceOf(VerificationFailure.class);
 			assertThat(((VerificationFailure) result).reason()).isEqualTo(testCase.expectedReason());
@@ -259,7 +257,8 @@ final class TokenVerificationServiceVerifyTokenTest
 		@MethodSource("policyFailureCases")
 		void shouldReturnFailureForPolicyValidation(final FailureCase testCase)
 		{
-			final VerificationResult result = service(testCase.parserSecret()).verifyToken(testCase.request());
+			final VerificationResult result = service(testCase.parserSecret())
+					.verifyToken(testCase.token(), testCase.configuration());
 
 			assertThat(result).isInstanceOf(VerificationFailure.class);
 			assertThat(((VerificationFailure) result).reason()).isEqualTo(testCase.expectedReason());
@@ -313,7 +312,8 @@ final class TokenVerificationServiceVerifyTokenTest
 		@MethodSource("signatureAndStructureFailureCases")
 		void shouldReturnFailureForSignatureAndStructureProblems(final FailureCase testCase)
 		{
-			final VerificationResult result = service(testCase.parserSecret()).verifyToken(testCase.request());
+			final VerificationResult result = service(testCase.parserSecret())
+					.verifyToken(testCase.token(), testCase.configuration());
 
 			assertThat(result).isInstanceOf(VerificationFailure.class);
 			assertThat(((VerificationFailure) result).reason()).isEqualTo(testCase.expectedReason());

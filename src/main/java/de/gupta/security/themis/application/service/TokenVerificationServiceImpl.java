@@ -27,24 +27,27 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 	}
 
 	@Override
-	public VerificationResult verifyToken(final VerificationRequest request)
+	public VerificationResult verifyToken(final String token, final TokenVerificationConfiguration configuration)
 	{
-		return Fallible.beckon(request)
-		               .metamorphose(this::verifySignedToken, exceptionally())
+		Objects.requireNonNull(token, "token must not be null");
+		Objects.requireNonNull(configuration, "configuration must not be null");
+
+		return Fallible.beckon(token)
+		               .metamorphose(t -> verifySignedToken(t, configuration), exceptionally())
 		               .coronate(Function.identity(), _ -> failure(VerificationFailureReason.MALFORMED));
 	}
 
-	private VerificationResult verifySignedToken(final VerificationRequest request)
+	private VerificationResult verifySignedToken(final String token,
+	                                             final TokenVerificationConfiguration configuration)
 	{
-		final TokenVerificationConfiguration configuration = request.configuration();
 		final TokenVerificationPolicy policy = configuration.policy();
-		final Jws<Claims> jws = jwtParser.parseSignedClaims(request.token());
+		final Jws<Claims> jws = jwtParser.parseSignedClaims(token);
 		final Claims claims = jws.getPayload();
 
 		return validateClaims(claims, policy)
 				.<VerificationResult>metamorphose(Function.identity())
 				.infuse(VerificationSuccess.of(
-						NormalizedTokenFactory.of(request.token(), claims,
+						NormalizedTokenFactory.of(token, claims,
 								configuration.rolesClaimName(),
 								configuration.versionClaimName())));
 	}

@@ -1,25 +1,29 @@
 package de.gupta.security.themis.api;
 
-import de.gupta.security.themis.controller.TokenVerificationController;
+import de.gupta.security.themis.application.service.TokenVerificationService;
 import de.gupta.security.themis.domain.model.VerificationResult;
 
 final class ConfiguredTokenVerifier implements TokenVerifier
 {
-	private final TokenVerificationController controller;
+	private final TokenVerificationConfiguration configuration;
+	private final TokenVerificationService service;
 
-	static TokenVerifier create(final TokenVerificationController controller)
+	static TokenVerifier create(final TokenVerificationConfiguration configuration,
+	                            final TokenVerificationService service)
 	{
-		return new ConfiguredTokenVerifier(controller);
+		return new ConfiguredTokenVerifier(configuration, service);
 	}
 
 	@Override
 	public VerificationResult verify(final String token)
 	{
-		return controller.verify(token);
+		return service.verifyToken(token, configuration);
 	}
 
-	private ConfiguredTokenVerifier(final TokenVerificationController controller)
+	private ConfiguredTokenVerifier(final TokenVerificationConfiguration configuration,
+	                                final TokenVerificationService service)
 	{
-		this.controller = controller;
+		this.configuration = configuration;
+		this.service = service;
 	}
 }
