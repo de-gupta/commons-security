@@ -37,7 +37,7 @@ final class HmacTokenVerifierFactory
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								ConfiguredVerificationRequestAdapter.create(configuration, clock))));
+								ConfiguredVerificationRequestAdapter.create(configuration))));
 	}
 
 	private HmacTokenVerifierFactory()

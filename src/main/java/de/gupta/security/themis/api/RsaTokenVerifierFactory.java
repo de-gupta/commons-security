@@ -36,7 +36,7 @@ final class RsaTokenVerifierFactory
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								ConfiguredVerificationRequestAdapter.create(configuration, clock))));
+								ConfiguredVerificationRequestAdapter.create(configuration))));
 	}
 
 	private RsaTokenVerifierFactory()

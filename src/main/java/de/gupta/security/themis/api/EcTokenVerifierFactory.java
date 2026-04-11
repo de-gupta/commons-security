@@ -36,7 +36,7 @@ final class EcTokenVerifierFactory
 				TokenVerificationControllerFactory.create(
 						TokenVerificationServiceFacadeFactory.create(
 								TokenVerificationServiceFactory.create(parser),
-								ConfiguredVerificationRequestAdapter.create(configuration, clock))));
+								ConfiguredVerificationRequestAdapter.create(configuration))));
 	}
 
 	private EcTokenVerifierFactory()

@@ -1,335 +1,138 @@
 # themis
 
-`themis` is a lean Java 25 JWT verification library.
+`themis` is a small Java 25 library for verifying signed JWTs and returning a trusted, normalized token view.
 
-It does one job:
+It is intentionally narrow:
 
-- verify a signed JWT
-- validate selected claims against a policy
-- normalize trusted claims into a stable token model
-- return either a verification success or a verification failure
+- verify a signed JWT against a configured key
+- apply selected policy checks after signature verification
+- normalize trusted claims into a stable result model
+- return success or failure without taking over the rest of your authentication flow
 
-It does not try to be an auth server, a user-management system, or a Spring Security starter.
+`themis` does not issue tokens, manage users, perform revocation checks, or wire framework-specific security stacks for
+you.
 
 ## Philosophy
 
-`themis` is intentionally narrow.
+This library exists for one boundary: deciding whether an incoming token is cryptographically trusted and policy-valid.
 
-The idea behind the library is simple:
+That means `themis` focuses on:
 
-- cryptographic trust is one concern
-- token issuance is another concern
-- stateful revocation/version checks are another concern
-- application authorization is yet another concern
-
-Those concerns are related, but they are not the same thing. `themis` focuses only on the cryptographic verification
-boundary and on producing a clean, trusted token abstraction for downstream code.
-
-That narrow scope is deliberate. It keeps the library:
-
-- small
-- predictable
-- framework-agnostic
-- easy to compose into larger security flows
-
-## The Bigger Picture
-
-`themis` is designed to work well on its own, but it also fits into a larger ecosystem.
-
-A useful mental model is:
-
-- `Hermes`: token issuance or token exchange
-- `Themis`: token verification and normalization
-- `Augustus`: token version or revocation-state checking
-- `Argus`: orchestrator module: composition of the whole pipeline
-
-In other words:
-
-- `Hermes` says: "this identity should receive this token"
-- `Themis` says: "this token is cryptographically trusted"
-- `Augustus` says: "this trusted token is still current, according to system state"
-
-## Architecture
-
-At the public surface, `themis` exposes only two kinds of packages:
-
-- `de.gupta.commons.security.api`
-- `de.gupta.commons.security.domain.model`
-
-Internally, the flow is layered:
-
-1. verifier implementation
-2. controller
-3. facade
-4. request adapter
-5. service
-
-That means the public API stays small, but the internal design still has clean seams for growth.
-
-At runtime, the flow looks like this:
-
-1. consumer creates a `TokenVerifier`
-2. consumer calls `verify(token)`
-3. `themis` adapts the raw token into a `VerificationRequest`
-4. the service verifies signature and temporal constraints
-5. the service validates configured policy checks
-6. `themis` returns either:
-    - `VerificationSuccess`
-    - `VerificationFailure`
-
-## What Themis Does
-
-Today, `themis` supports:
-
-- HMAC-signed JWT verification
-- RSA-signed JWT verification
-- EC-signed JWT verification
-- expiry validation
-- not-before validation
-- optional subject requirement
+- signature verification
+- expiry and not-before handling
 - optional issuer validation
 - optional audience validation
-- normalized access to trusted claims after verification
+- optional subject requirement
+- claim normalization for downstream code
 
-## What Themis Does Not Do
+It deliberately leaves adjacent concerns to the surrounding application or to other modules:
 
-`themis` currently does not:
+- token issuance
+- refresh flows
+- user lookup
+- revocation and version state
+- authorization decisions
 
-- issue tokens
-- refresh tokens
-- register or authenticate users
-- resolve users from a database
-- resolve roles from a database
-- perform version or revocation checks
-- auto-wire Spring Security filters or beans
-- verify JWTs from JWK sets or key locators
+## What You Provide
 
-Those concerns are intentionally outside the scope of this module.
+To use `themis`, a consumer provides three things:
 
-## Dependency
+- a verification configuration
+- a key or secret for the signing algorithm
+- a token string to verify
 
-```xml
+The configuration defines the post-signature policy:
 
-<dependency>
-    <groupId>io.github.de-gupta</groupId>
-    <artifactId>themis</artifactId>
-    <version>${latest-release-version}</version>
-</dependency>
-```
+- allowed clock skew
+- whether a subject is required
+- which audiences must be present
+- which issuer is expected
+- which custom claim names should be used for roles and token version
 
-## Public API
+For time handling, `themis` uses the verifier's `Clock`.
 
-The main public entrypoints are:
+That means:
 
-- `TokenVerifierFactory`
-- `TokenVerifier`
-- `TokenVerificationPolicy`
-- `VerificationResult`
-- `VerificationSuccess`
-- `VerificationFailure`
-- `NormalizedToken`
+- in production, use a live clock such as `Clock.systemUTC()`
+- in tests, inject a fixed clock when you want deterministic temporal behavior
 
-## Consumer Overview
+The verifier consults that clock at verification time, not just once when the verifier is created.
 
-There are two main ways to consume `themis`.
+## What You Get Back
 
-### 1. Standalone verification
+Verification returns one of two outcomes:
 
-This is the simplest usage:
+- success with a normalized token
+- failure with a structured failure reason
 
-- create a verifier for one trust domain
-- call `verify(...)`
-- consume the result
+On success, the normalized token gives convenient access to trusted values such as:
 
-### 2. Verification as one stage in a larger auth pipeline
+- subject
+- issuer
+- audiences
+- roles
+- version
+- issued-at / expires-at / not-before timestamps
+- simple string properties
 
-This is the intended shape when you have multiple auth components:
+On failure, the result tells you why verification was rejected, for example because the token was:
 
-- external token enters the system
-- `Hermes` may exchange it into an internal token
-- `Themis` verifies the token cryptographically
-- `Augustus` checks token version or revocation state
-- the application authorizes based on trusted claims and local policy
+- malformed
+- unsupported
+- expired
+- not yet valid
+- signed with the wrong key
+- missing a required subject
+- carrying the wrong issuer
+- carrying the wrong audience
 
-## Quick Start
+## Audience Semantics
 
-Create an HMAC verifier:
+Audience validation is policy-driven.
 
-```java
-import api.de.gupta.security.themis.TokenVerificationPolicy;
-import api.de.gupta.security.themis.TokenVerifier;
-import api.de.gupta.security.themis.TokenVerifierFactory;
+- if no expected audiences are configured, audience validation is skipped
+- if expected audiences are configured, the token must contain all of them
 
-import java.time.Duration;
-import java.util.Optional;
-import java.util.Set;
-
-final TokenVerifier verifier = TokenVerifierFactory.hmac(
-		TokenVerificationPolicy.of(
-				Duration.ofSeconds(30),
-				true,
-				Set.of("my-service"),
-				Optional.of("https://issuer.example")
-		),
-		"0123456789abcdef0123456789abcdef"
-);
-```
-
-Create RSA or EC verifiers:
-
-```java
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-
-final TokenVerifier rsaVerifier = TokenVerifierFactory.rsa(policy, rsaPublicKey);
-final TokenVerifier ecVerifier = TokenVerifierFactory.ec(policy, ecPublicKey);
-```
-
-Verify a token:
-
-```java
-import model.domain.de.gupta.security.themis.NormalizedToken;
-import model.domain.de.gupta.security.themis.VerificationFailure;
-import model.domain.de.gupta.security.themis.VerificationResult;
-import model.domain.de.gupta.security.themis.VerificationSuccess;
-
-final VerificationResult result = verifier.verify(jwtToken);
-
-if(result instanceof
-VerificationSuccess success)
-		{
-final NormalizedToken token = success.token();
-final String subject = token.subject();
-final Set<String> roles = token.stringListClaim("user_roles");
-}
-		else if(result instanceof
-VerificationFailure failure)
-		{
-final var reason = failure.reason();
-}
-```
-
-## Typical Consumer Flow
-
-For the current scope, a consumer typically does this:
-
-1. create a `TokenVerifier` once for one issuer/key setup
-2. call `verify(...)` for each incoming token
-3. on `VerificationSuccess`, use the returned `NormalizedToken`
-4. on `VerificationFailure`, react based on `VerificationFailureReason`
-
-One verifier instance should usually represent one trust domain.
-
-That means a system can create multiple verifiers when it needs to verify tokens from different creators, for example:
-
-- one verifier for external Supabase tokens
-- another verifier for internal Hermes-issued tokens
-
-## Verification Policy
-
-`TokenVerificationPolicy` controls the non-cryptographic checks applied after signature verification.
-
-Current policy options:
-
-- `clockSkew`
-- `requireSubject`
-- `expectedAudiences`
-- `expectedIssuer`
-
-Convenience factories:
-
-```java
-TokenVerificationPolicy.create();
-TokenVerificationPolicy.
-
-of(Duration.ZERO);
-TokenVerificationPolicy.
-
-of(Duration.ZERO, true);
-TokenVerificationPolicy.
-
-of(Duration.ZERO, true,Set.of("audience"));
-		TokenVerificationPolicy.
-
-of(Duration.ZERO, true,Set.of("audience"),Optional.
-
-of("issuer"));
-```
-
-### Audience behavior
-
-Audience checking is policy-driven:
-
-- if `expectedAudiences` is empty, no audience validation is performed
-- if `expectedAudiences` is non-empty, the token audiences must contain all expected audiences
-
-This means the check is a superset check, not exact equality.
+This is a superset check, not exact equality.
 
 Examples:
 
-- token has no `aud`, policy expects none: pass
-- token has no `aud`, policy expects `service-a`: fail
-- token has `aud = ["a", "b", "c"]`, policy expects `["a"]`: pass
-- token has `aud = ["a", "b", "c"]`, policy expects `["a", "b"]`: pass
-- token has `aud = ["a", "b", "c"]`, policy expects `["a", "d"]`: fail
+- token has no audience, policy expects none: pass
+- token has no audience, policy expects `service-a`: fail
+- token has audiences `a, b, c`, policy expects `a`: pass
+- token has audiences `a, b, c`, policy expects `a, b`: pass
+- token has audiences `a, b, c`, policy expects `a, d`: fail
 
-## Verification Results
+## Typical Usage Shape
 
-`VerificationResult` is a sealed hierarchy:
+The intended usage pattern is simple:
 
-- `VerificationSuccess`
-- `VerificationFailure`
+1. create one verifier for one trust domain
+2. reuse that verifier for incoming tokens from that issuer/key setup
+3. react to success or failure in application code
+4. on success, use the normalized token instead of working with raw JWT claims directly
 
-`VerificationFailure` currently returns one of these reasons:
+One verifier instance should usually correspond to one issuer and one verification policy.
 
-- `MALFORMED`
-- `INVALID_SIGNATURE`
-- `EXPIRED`
-- `NOT_YET_VALID`
-- `MISSING_SUBJECT`
-- `INVALID_ISSUER`
-- `INVALID_AUDIENCE`
-- `UNSUPPORTED`
+If your application accepts tokens from multiple trust domains, create multiple verifiers.
 
-## Normalized Token
+## What This Library Does Not Decide
 
-On success, `themis` returns a `NormalizedToken`.
+Even after a token is successfully verified, your application may still need to answer questions like:
 
-It currently exposes:
+- is this token revoked?
+- is the token version still current?
+- does this subject still exist?
+- is this user allowed to do this action?
 
-- `rawToken()`
-- `subject()`
-- `issuer()`
-- `audiences()`
-- `issuedAt()`
-- `expiresAt()`
-- `stringClaim(name)`
-- `stringListClaim(name)`
-- `longClaim(name)`
+Those are intentionally outside the scope of `themis`.
 
-This lets consumers work with a trusted, normalized token model instead of depending directly on JJWT claim APIs.
+## Testing
 
-## Test Coverage
-
-Run tests normally with:
+Run the test suite with:
 
 ```bash
 mvn test
 ```
 
-Generate coverage reports with:
-
-```bash
-mvn clean verify -Pcoverage
-```
-
-JaCoCo reports are generated at:
-
-- `target/site/jacoco/index.html`
-- `target/site/jacoco/jacoco.xml`
-
-At the current stage, local coverage is already strong enough for a v1 release:
-
-- line coverage: 100%
-- instruction coverage: above 98%
-- branch coverage: above 90%
+If you want deterministic temporal verification in your own tests, construct the verifier with a fixed clock.

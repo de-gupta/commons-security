@@ -88,8 +88,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		                              final Consumer<NormalizedToken> assertion)
 		{
 			return new SuccessCase(description,
-					VerificationRequest.of(token,
-							VerificationContext.of(configuration, CLOCK.instant())),
+					VerificationRequest.of(token, configuration),
 					parserSecret,
 					assertion);
 		}
@@ -120,8 +119,7 @@ final class TokenVerificationServiceVerifyTokenTest
 		                              final VerificationFailureReason expectedReason)
 		{
 			return new FailureCase(description,
-					VerificationRequest.of(token,
-							VerificationContext.of(configuration, CLOCK.instant())),
+					VerificationRequest.of(token, configuration),
 					parserSecret,
 					expectedReason);
 		}

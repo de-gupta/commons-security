@@ -36,7 +36,7 @@ final class TokenVerificationServiceImpl implements TokenVerificationService
 
 	private VerificationResult verifySignedToken(final VerificationRequest request)
 	{
-		final TokenVerificationConfiguration configuration = request.context().configuration();
+		final TokenVerificationConfiguration configuration = request.configuration();
 		final TokenVerificationPolicy policy = configuration.policy();
 		final Jws<Claims> jws = jwtParser.parseSignedClaims(request.token());
 		final Claims claims = jws.getPayload();
